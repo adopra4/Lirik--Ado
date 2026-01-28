@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elegant Lyrics Player</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1 class="logo">🎵 LyricFlow</h1>
+            <p class="tagline">Elegant Music Experience</p>
+        </header>
+
+        <!-- Song List Container - Auto populated dari folder songs/ -->
+        <div id="songList" class="song-list">
+            <div class="loading">Loading playlist...</div>
+        </div>
+
+        <!-- Player Section -->
+        <div class="player-section" id="playerSection" style="display: none;">
+            <div class="now-playing">
+                <div class="album-art">
+                    <img id="currentCover" src="" alt="Album Cover">
+                    <div class="vinyl-spin"></div>
+                </div>
+                <div class="track-info">
+                    <h2 id="currentTitle">Select a song</h2>
+                    <p id="currentArtist">-</p>
+                </div>
+            </div>
+
+            <!-- Audio Player -->
+            <div class="audio-container">
+                <audio id="audioPlayer" controls></audio>
+                <div class="time-display">
+                    <span id="currentTime">00:00:00</span>
+                    <span id="duration">00:00:00</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress" id="progressBar"></div>
+                </div>
+            </div>
+
+            <!-- Lyrics Display -->
+            <div class="lyrics-container">
+                <div class="lyrics-header">
+                    <h3>🎤 Lyrics</h3>
+                    <span class="time-format">Format: HH:MM:SS</span>
+                </div>
+                <div id="lyricsDisplay" class="lyrics-display">
+                    <p class="lyrics-placeholder">Pilih lagu untuk melihat lirik...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Developer Panel (Hidden by default, accessible via secret key) -->
+        <div id="devPanel" class="dev-panel hidden">
+            <div class="dev-header">
+                <h3>🔧 Developer Panel</h3>
+                <button onclick="toggleDevPanel()" class="close-dev">×</button>
+            </div>
+            <div class="dev-tools">
+                <button onclick="refreshSongs()" class="btn-refresh">🔄 Refresh Songs</button>
+                <button onclick="showAddForm()" class="btn-add">➕ Add New Song</button>
+                <button onclick="toggleEditMode()" class="btn-edit">✏️ Edit Mode</button>
+            </div>
+            <div id="addSongForm" class="add-form hidden">
+                <h4>Tambah Lagu Baru</h4>
+                <input type="text" id="newSongId" placeholder="Song ID (unique)">
+                <input type="text" id="newSongTitle" placeholder="Judul Lagu">
+                <input type="text" id="newSongArtist" placeholder="Artis">
+                <input type="text" id="newSongCover" placeholder="URL Cover Image">
+                <input type="text" id="newSongAudio" placeholder="URL Audio File">
+                <textarea id="newSongLyrics" placeholder="Lirik dengan format:
+00:00:05|Baris lirik pertama
+00:00:10|Baris lirik kedua
+00:01:30|Baris lirik ketiga"></textarea>
+                <button onclick="addNewSong()" class="btn-save">💾 Save Song</button>
+            </div>
+        </div>
+
+        <!-- Dev Mode Trigger -->
+        <button id="devTrigger" class="dev-trigger" onclick="activateDevMode()">🫩</button>
+    </div>
+
+    <!-- Load Songs Data -->
+    <div id="songsContainer" style="display: none;"></div>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
