@@ -47,50 +47,6 @@ async function loadSongs() {
     }
 }
 
-// Default songs (bisa diganti dengan fetch ke folder songs/)
-function getDefaultSongs() {
-    return [
-        {
-            id: 'song1',
-            title: 'Midnight Dreams',
-            artist: 'Luna Eclipse',
-            cover: 'https://images.unsplash.com/photo-1493225255756-d9584f8606e9?w=400',
-            audio: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-            lyrics: `00:00:05|Dreaming in the midnight hour
-00:00:12|Stars above are shining bright
-00:00:20|Whispers of a distant power
-00:00:28|Guiding through the night
-00:00:35|Moonlight dances on the water
-00:00:42|Reflections of our love
-00:00:50|Time stands still, moments captured
-00:00:58|Like stars from above
-00:01:10|Midnight dreams take me away
-00:01:18|To a place where we can stay
-00:01:25|Forever in this endless night
-00:01:35|Holding on to morning light`
-        },
-        {
-            id: 'song2',
-            title: 'Neon City',
-            artist: 'Cyber Pulse',
-            cover: 'https://images.unsplash.com/photo-1514525253440-b393452e8d26?w=400',
-            audio: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-            lyrics: `00:00:03|Walking through the neon lights
-00:00:10|City never sleeps tonight
-00:00:18|Digital hearts beating fast
-00:00:25|Running from the past
-00:00:32|Skyscrapers touch the sky
-00:00:40|Neon dreams will never die
-00:00:48|In this electric paradise
-00:00:55|We find our disguise
-00:01:05|Neon city, shine so bright
-00:01:12|Paint the darkness with your light
-00:01:20|Neon city, hear my call
-00:01:28|Don't let me fall`
-        }
-    ];
-}
-
 // Render daftar lagu
 function renderSongList() {
     const container = document.getElementById('songList');
