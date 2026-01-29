@@ -1,0 +1,86 @@
+/* Tablet */
+@media (max-width: 1024px) {
+    .sidebar {
+        width: 200px;
+    }
+    
+    .main-content {
+        margin-left: 200px;
+    }
+    
+    .player {
+        left: 200px;
+    }
+    
+    .song-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: fixed;
+        bottom: 80px;
+        top: auto;
+        padding: 10px;
+        flex-direction: row;
+        justify-content: space-around;
+        z-index: 90;
+    }
+    
+    .logo-text,
+    .version,
+    .user-section {
+        display: none;
+    }
+    
+    .nav-links {
+        display: flex;
+        gap: 20px;
+    }
+    
+    .nav-links li span {
+        font-size: 20px;
+    }
+    
+    .nav-links li {
+        padding: 8px;
+    }
+    
+    .main-content {
+        margin-left: 0;
+        margin-bottom: 140px;
+    }
+    
+    .header {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .search-box input {
+        width: 200px;
+    }
+    
+    .player {
+        left: 0;
+        flex-direction: column;
+        gap: 10px;
+        padding: 10px;
+    }
+    
+    .player-info,
+    .player-progress {
+        width: 100%;
+    }
+    
+    .lyrics-panel {
+        width: 100%;
+    }
+    
+    .dev-stats {
+        grid-template-columns: 1fr;
+    }
+}
