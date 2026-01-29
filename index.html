@@ -413,5 +413,17 @@ Example:
     <script src="js/playlist.js"></script>
     <script src="js/visualizer.js"></script>
     <script src="js/plugins/plugin-manager.js"></script>
+    <script src="js/library.js"></script>
+    <script src="js/themes.js"></script>
+    <script src="js/dev.js"></script>
+    
+    <script>
+        // Initialize all modules after DOM loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            App.library.init();
+            App.themes.init();
+            App.dev.init();
+        });
+    </script>
 </body>
 </html>
