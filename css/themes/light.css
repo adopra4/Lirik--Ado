@@ -1,24 +1,172 @@
 /* ============================================
-   LIGHT THEME
+   LYRICFLOW v1.3 - LIGHT THEME
    ============================================ */
 
 [data-theme="light"] {
-    --bg-primary: #f8fafc;
+    /* Primary Colors */
+    --primary: #e6005c;
+    --primary-hover: #ff1a75;
+    --primary-rgb: 230, 0, 92;
+    
+    --secondary: #7020e0;
+    --secondary-hover: #8a4de6;
+    --secondary-rgb: 112, 32, 224;
+    
+    --accent: #2563eb;
+    --accent-hover: #3b82f6;
+    --accent-rgb: 37, 99, 235;
+    
+    /* Semantic Colors */
+    --success: #059669;
+    --warning: #d97706;
+    --error: #dc2626;
+    --info: #2563eb;
+    
+    /* Background Colors */
+    --bg-primary: #fafafa;
     --bg-secondary: #ffffff;
-    --bg-elevated: #f1f5f9;
-    --bg-hover: #e2e8f0;
+    --bg-tertiary: #f3f4f6;
+    --bg-elevated: #e5e7eb;
+    --bg-overlay: rgba(0, 0, 0, 0.5);
     
-    --text-primary: #0f172a;
-    --text-secondary: #64748b;
-    --text-muted: #94a3b8;
+    /* Text Colors */
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --text-tertiary: #9ca3af;
+    --text-muted: #d1d5db;
     
-    --accent-primary: #4f46e5;
-    --accent-secondary: #7c3aed;
-    --accent-alpha: rgba(79, 70, 229, 0.2);
+    /* Border Colors */
+    --border-primary: rgba(0, 0, 0, 0.1);
+    --border-secondary: rgba(0, 0, 0, 0.05);
+    --border-focus: rgba(230, 0, 92, 0.5);
     
-    --border-color: rgba(0, 0, 0, 0.08);
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    --shadow-glow: 0 0 20px rgba(230, 0, 92, 0.2);
+    --shadow-glow-lg: 0 0 40px rgba(230, 0, 92, 0.3);
     
-    --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
-    --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-    --shadow-lg: 0 8px 30px rgba(0,0,0,0.12);
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, #e6005c, #7020e0);
+    --gradient-secondary: linear-gradient(135deg, #7020e0, #2563eb);
+    --gradient-accent: linear-gradient(135deg, #2563eb, #059669);
+    
+    /* Scrollbar */
+    --scrollbar-thumb: rgba(0, 0, 0, 0.2);
+    --scrollbar-thumb-hover: rgba(0, 0, 0, 0.3);
+}
+
+/* Light Theme Specific Styles */
+[data-theme="light"] .glass {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .hero-bg {
+    background: linear-gradient(135deg, rgba(230, 0, 92, 0.05), rgba(112, 32, 224, 0.05));
+}
+
+[data-theme="light"] .sidebar {
+    background: #ffffff;
+    border-right-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .main-header {
+    background: rgba(255, 255, 255, 0.9);
+    border-bottom-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .player-bar {
+    background: #ffffff;
+    border-top-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .song-card,
+[data-theme="light"] .playlist-card {
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .lyrics-container {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .modal {
+    background: #ffffff;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="light"] .player-backdrop::after {
+    background: linear-gradient(to bottom, rgba(250, 250, 250, 0), #fafafa);
+}
+
+[data-theme="light"] .progress-bar {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .nav-link {
+    color: #6b7280;
+}
+
+[data-theme="light"] .nav-link:hover {
+    background: #f3f4f6;
+}
+
+[data-theme="light"] .nav-link.active {
+    background: rgba(230, 0, 92, 0.1);
+}
+
+[data-theme="light"] .context-menu,
+[data-theme="light"] .user-dropdown,
+[data-theme="light"] .theme-dropdown,
+[data-theme="light"] .search-suggestions {
+    background: #ffffff;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] input,
+[data-theme="light"] textarea,
+[data-theme="light"] select {
+    background: #f3f4f6;
+    border-color: rgba(0, 0, 0, 0.1);
+    color: #111827;
+}
+
+[data-theme="light"] input:focus,
+[data-theme="light"] textarea:focus,
+[data-theme="light"] select:focus {
+    background: #ffffff;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(230, 0, 92, 0.1);
+}
+
+[data-theme="light"] .btn-secondary {
+    background: #f3f4f6;
+    border-color: rgba(0, 0, 0, 0.1);
+    color: #374151;
+}
+
+[data-theme="light"] .btn-secondary:hover {
+    background: #e5e7eb;
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="light"] .lyrics-line {
+    color: #6b7280;
+}
+
+[data-theme="light"] .lyrics-line.active {
+    color: var(--primary);
+    text-shadow: none;
+}
+
+[data-theme="light"] .lyrics-line.passed {
+    color: #9ca3af;
+}
+
+[data-theme="light"] .album-art-glow {
+    opacity: 0.2;
 }
