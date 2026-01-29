@@ -1,0 +1,22 @@
+{
+  "version": "00.00.00",
+  "users": [
+    {
+      "id": 1,
+      "username": "user",
+      "password": "user123",
+      "role": "user",
+      "createdAt": "2024-01-29",
+      "lastLogin": null
+    },
+    {
+      "id": 2,
+      "username": "dev",
+      "password": "dev123",
+      "role": "developer",
+      "secretKey": "LYRICFLOW_DEV_2024_SECRET",
+      "createdAt": "2024-01-29",
+      "lastLogin": null
+    }
+  ]
+}
