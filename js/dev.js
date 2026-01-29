@@ -1,832 +1,487 @@
 /**
- * LYRICFLOW v1.3 - DEVELOPER MODULE
- * Developer/Admin panel and advanced tools
+ * LyricFlow v1.3 - Main Application
+ * Fixed initialization issues
  */
 
-const LFDev = {
-    isDev: false,
-    currentUser: null,
-    logs: [],
-    maxLogs: 1000,
-    
-    // Mock database for demo
-    mockDB: {
-        users: [
-            { id: '1', name: 'Admin', email: 'admin@lyricflow.app', role: 'developer', createdAt: Date.now() },
-            { id: '2', name: 'User1', email: 'user1@test.com', role: 'user', createdAt: Date.now() - 86400000 },
-            { id: '3', name: 'User2', email: 'user2@test.com', role: 'user', createdAt: Date.now() - 172800000 }
-        ],
-        songs: [],
-        analytics: {
-            totalPlays: 15420,
-            totalUsers: 3,
-            activeUsers: 2,
-            storageUsed: 1024 * 1024 * 500 // 500MB
-        }
-    },
-    
-    init() {
-        this.checkDevStatus();
-        this.setupEventListeners();
-        this.setupConsoleOverride();
-        
-        console.log('Developer module initialized');
-    },
-    
-    checkDevStatus() {
-        // Check URL params
-        const params = LFUtils.parseQueryParams();
-        if (params.dev === 'true' || params.admin === 'true') {
-            this.enableDevMode();
-        }
-        
-        // Check localStorage
-        const devToken = LFUtils.storage.get('lf_dev_token');
-        if (devToken) {
-            this.validateDevToken(devToken);
-        }
-        
-        // Check keyboard shortcut (Ctrl+Shift+D)
-        document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.shiftKey && e.key === 'D') {
-                e.preventDefault();
-                this.showDevLogin();
-            }
-        });
-    },
-    
-    setupEventListeners() {
-        // Dev login
-        $('#dev-login-form')?.addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleDevLogin();
-        });
-        
-        // Song management
-        $('#dev-add-song')?.addEventListener('click', () => this.addSong());
-        $('#dev-export-db')?.addEventListener('click', () => this.exportDatabase());
-        $('#dev-import-db')?.addEventListener('click', () => this.importDatabase());
-        $('#dev-clear-db')?.addEventListener('click', () => this.clearDatabase());
-        
-        // User management
-        $('#dev-create-user')?.addEventListener('click', () => this.showCreateUserModal());
-        
-        // System tools
-        $('#dev-clear-cache')?.addEventListener('click', () => this.clearCache());
-        $('#dev-run-diagnostics')?.addEventListener('click', () => this.runDiagnostics());
-        $('#dev-simulate-offline')?.addEventListener('click', () => this.simulateOffline());
-        $('#dev-performance-test')?.addEventListener('click', () => this.runPerformanceTest());
-        
-        // Log viewer
-        $('#dev-clear-logs')?.addEventListener('click', () => this.clearLogs());
-        $('#dev-export-logs')?.addEventListener('click', () => this.exportLogs());
-        $('#dev-filter-logs')?.addEventListener('change', (e) => this.filterLogs(e.target.value));
-        
-        // Theme editor
-        $('#dev-save-theme')?.addEventListener('click', () => this.saveCustomTheme());
-        $('#dev-preview-theme')?.addEventListener('click', () => this.previewTheme());
-        
-        // API tester
-        $('#dev-test-api')?.addEventListener('click', () => this.testAPI());
-        $('#dev-api-method')?.addEventListener('change', (e) => this.updateAPIBody(e.target.value));
-    },
-    
-    setupConsoleOverride() {
-        // Override console methods to capture logs
-        const originalLog = console.log;
-        const originalWarn = console.warn;
-        const originalError = console.error;
-        
-        console.log = (...args) => {
-            this.addLog('log', args);
-            originalLog.apply(console, args);
+class LyricApp {
+    constructor() {
+        // State management
+        this.state = {
+            currentUser: null,
+            isPlaying: false,
+            currentSong: null,
+            currentTime: 0,
+            duration: 0,
+            songs: [],
+            users: [],
+            favorites: new Set()
         };
+
+        // Timer reference
+        this.playbackTimer = null;
         
-        console.warn = (...args) => {
-            this.addLog('warn', args);
-            originalWarn.apply(console, args);
-        };
-        
-        console.error = (...args) => {
-            this.addLog('error', args);
-            originalError.apply(console, args);
-        };
-        
-        // Capture unhandled errors
-        window.addEventListener('error', (e) => {
-            this.addLog('error', [e.message, e.filename, e.lineno]);
-        });
-        
-        window.addEventListener('unhandledrejection', (e) => {
-            this.addLog('error', ['Unhandled Promise Rejection:', e.reason]);
-        });
-    },
-    
-    // Dev mode control
-    
-    enableDevMode() {
-        this.isDev = true;
-        LyricFlow.setState('isDev', true);
-        
-        // Show dev section in sidebar
-        $('#dev-section').style.display = 'block';
-        
-        // Add dev indicator
-        this.addDevIndicator();
-        
-        // Load dev panel
-        this.loadDevPanel();
-        
-        console.log('%c🔧 Developer Mode Enabled', 'color: #ff006e; font-size: 20px; font-weight: bold;');
-    },
-    
-    disableDevMode() {
-        this.isDev = false;
-        LyricFlow.setState('isDev', false);
-        $('#dev-section').style.display = 'none';
-        $('.dev-indicator')?.remove();
-        
-        LFUtils.storage.remove('lf_dev_token');
-    },
-    
-    addDevIndicator() {
-        const indicator = LFUtils.createElement('div', {
-            className: 'dev-indicator',
-            style: 'position: fixed; bottom: 100px; right: 20px; background: linear-gradient(135deg, #ff006e, #8338ec); color: white; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: bold; z-index: 9999; box-shadow: 0 4px 12px rgba(255, 0, 110, 0.4);'
-        }, 'DEV MODE');
-        
-        document.body.appendChild(indicator);
-    },
-    
-    // Authentication
-    
-    showDevLogin() {
-        const modal = LFUtils.createElement('div', {
-            className: 'modal active',
-            id: 'modal-dev-login'
-        },
-            LFUtils.createElement('div', { className: 'modal-header' },
-                LFUtils.createElement('h2', {}, 'Developer Login'),
-                LFUtils.createElement('button', {
-                    className: 'modal-close',
-                    onclick: () => modal.remove()
-                }, '×')
-            ),
-            LFUtils.createElement('div', { className: 'modal-body' },
-                LFUtils.createElement('form', { id: 'dev-login-form' },
-                    LFUtils.createElement('div', { className: 'form-group' },
-                        LFUtils.createElement('label', {}, 'Developer Key'),
-                        LFUtils.createElement('input', {
-                            type: 'password',
-                            id: 'dev-key',
-                            placeholder: 'Enter developer key',
-                            required: true
-                        })
-                    ),
-                    LFUtils.createElement('div', { className: 'form-group' },
-                        LFUtils.createElement('label', {},
-                            LFUtils.createElement('input', {
-                                type: 'checkbox',
-                                id: 'dev-remember'
-                            }),
-                            ' Remember me'
-                        )
-                    ),
-                    LFUtils.createElement('button', {
-                        type: 'submit',
-                        className: 'btn-primary btn-block'
-                    }, 'Login')
-                )
-            )
-        );
-        
-        document.body.appendChild(modal);
-        
-        // Add overlay
-        const overlay = LFUtils.createElement('div', {
-            className: 'modal-overlay active',
-            onclick: () => {
-                modal.remove();
-                overlay.remove();
-            }
-        });
-        document.body.appendChild(overlay);
-    },
-    
-    handleDevLogin() {
-        const key = $('#dev-key')?.value;
-        const remember = $('#dev-remember')?.checked;
-        
-        // Simple validation (in production, validate against server)
-        if (key === 'lyricflow-dev-2024' || key === 'admin') {
-            if (remember) {
-                LFUtils.storage.set('lf_dev_token', btoa(key + Date.now()));
-            }
-            
-            this.enableDevMode();
-            $('#modal-dev-login')?.remove();
-            $('.modal-overlay')?.remove();
-            
-            LyricFlow.showToast('Developer mode enabled!', 'success');
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => this.init());
         } else {
-            LyricFlow.showToast('Invalid developer key', 'error');
+            this.init();
         }
-    },
-    
-    validateDevToken(token) {
-        // Validate token (simplified)
+    }
+
+    init() {
         try {
-            const decoded = atob(token);
-            if (decoded.includes('lyricflow-dev') || decoded.includes('admin')) {
-                this.enableDevMode();
+            console.log('🎵 LyricFlow v1.3 Initializing...');
+            
+            this.loadData();
+            this.renderSongs();
+            this.setupEventListeners();
+            this.updateUI();
+            
+            console.log('✅ App initialized successfully');
+        } catch (error) {
+            console.error('❌ Failed to initialize app:', error);
+            this.showError('Failed to initialize app. Please refresh.');
+        }
+    }
+
+    loadData() {
+        // Load from localStorage with error handling
+        try {
+            const savedSongs = localStorage.getItem('lyricflow_songs');
+            const savedUsers = localStorage.getItem('lyricflow_users');
+            const savedUser = localStorage.getItem('lyricflow_currentUser');
+            const savedFavorites = localStorage.getItem('lyricflow_favorites');
+
+            this.state.songs = savedSongs ? JSON.parse(savedSongs) : this.getDefaultSongs();
+            this.state.users = savedUsers ? JSON.parse(savedUsers) : this.getDefaultUsers();
+            this.state.currentUser = savedUser ? JSON.parse(savedUser) : null;
+            this.state.favorites = savedFavorites ? new Set(JSON.parse(savedFavorites)) : new Set();
+        } catch (e) {
+            console.warn('Error loading data, using defaults:', e);
+            this.state.songs = this.getDefaultSongs();
+            this.state.users = this.getDefaultUsers();
+        }
+    }
+
+    getDefaultSongs() {
+        return [
+            {
+                id: 1,
+                title: "Sample Song",
+                artist: "Demo Artist",
+                duration: "3:45",
+                durationSeconds: 225,
+                lyrics: [
+                    { time: 0, text: "♪ Musik Dimulai ♪" },
+                    { time: 10, text: "Ini adalah baris pertama lirik" },
+                    { time: 20, text: "Ini adalah baris kedua lirik" },
+                    { time: 30, text: "Lagu demo untuk testing" },
+                    { time: 225, text: "♪ Musik Berakhir ♪" }
+                ]
+            }
+        ];
+    }
+
+    getDefaultUsers() {
+        return [
+            { username: 'admin', password: 'admin123', role: 'admin' }
+        ];
+    }
+
+    saveData() {
+        try {
+            localStorage.setItem('lyricflow_songs', JSON.stringify(this.state.songs));
+            localStorage.setItem('lyricflow_users', JSON.stringify(this.state.users));
+            localStorage.setItem('lyricflow_favorites', JSON.stringify([...this.state.favorites]));
+            if (this.state.currentUser) {
+                localStorage.setItem('lyricflow_currentUser', JSON.stringify(this.state.currentUser));
             }
         } catch (e) {
-            LFUtils.storage.remove('lf_dev_token');
+            console.error('Error saving data:', e);
         }
-    },
-    
-    // Dev Panel
-    
-    loadDevPanel() {
-        if (!this.isDev) return;
+    }
+
+    setupEventListeners() {
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                this.togglePlay();
+            }
+        });
+
+        // Window beforeunload
+        window.addEventListener('beforeunload', () => {
+            this.saveData();
+        });
+    }
+
+    // Navigation
+    navigate(view) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
         
-        const panel = $('#page-dev-panel');
-        if (!panel) return;
+        const targetView = document.getElementById(view + 'View');
+        if (targetView) {
+            targetView.classList.add('active');
+        }
         
-        this.renderDevStats();
-        this.renderUsersList();
-        this.renderLogs();
-        this.renderSystemInfo();
-    },
-    
-    renderDevStats() {
-        const statsContainer = $('#dev-stats');
-        if (!statsContainer) return;
+        event.target?.classList.add('active');
         
-        const stats = this.mockDB.analytics;
-        
-        statsContainer.innerHTML = `
-            <div class="stat-item">
-                <span class="stat-value">${stats.totalPlays.toLocaleString()}</span>
-                <span class="stat-label">Total Plays</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-value">${stats.totalUsers}</span>
-                <span class="stat-label">Users</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-value">${stats.activeUsers}</span>
-                <span class="stat-label">Active Now</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-value">${LFUtils.formatFileSize(stats.storageUsed)}</span>
-                <span class="stat-label">Storage Used</span>
-            </div>
-        `;
-    },
-    
-    renderUsersList() {
-        const container = $('#dev-users-list');
-        if (!container) return;
-        
-        container.innerHTML = this.mockDB.users.map(user => `
-            <div class="user-item">
-                <div class="user-info">
-                    <img src="assets/images/default-avatar.png" class="user-avatar-small">
-                    <div>
-                        <div class="user-name">${LFUtils.sanitize(user.name)}</div>
-                        <div class="user-email">${LFUtils.sanitize(user.email)}</div>
-                        <span class="badge ${user.role}">${user.role}</span>
-                    </div>
-                </div>
-                <div class="user-actions">
-                    <button class="btn-icon" onclick="LFDev.editUser('${user.id}')" title="Edit">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                    </button>
-                    <button class="btn-icon danger" onclick="LFDev.deleteUser('${user.id}')" title="Delete">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                    </button>
-                </div>
-            </div>
-        `).join('');
-    },
-    
-    // Song Management
-    
-    async addSong() {
-        const title = $('#dev-song-title')?.value;
-        const artist = $('#dev-song-artist')?.value;
-        const album = $('#dev-song-album')?.value;
-        const audioFile = $('#dev-audio-file')?.files[0];
-        const lrcFile = $('#dev-lrc-file')?.files[0];
-        
-        if (!title || !artist || !audioFile) {
-            LyricFlow.showToast('Please fill in required fields', 'warning');
+        if (view === 'admin' && (!this.state.currentUser || this.state.currentUser.role !== 'admin')) {
+            this.showLogin();
             return;
         }
         
-        try {
-            // Process audio file
-            const arrayBuffer = await LFUtils.readFileAsArrayBuffer(audioFile);
-            const audioBuffer = await LFUtils.decodeAudioData(arrayBuffer);
-            
-            // Create song object
-            const song = {
-                id: LFUtils.generateUUID(),
-                title,
-                artist,
-                album: album || 'Unknown Album',
-                duration: audioBuffer.duration,
-                addedAt: Date.now(),
-                addedBy: 'developer'
-            };
-            
-            // Save audio
-            await LFUtils.db.put('offline', {
-                id: `audio_${song.id}`,
-                data: arrayBuffer,
-                type: audioFile.type
-            });
-            
-            // Process lyrics if provided
-            if (lrcFile) {
-                const lrcContent = await LFUtils.readFileAsText(lrcFile);
-                await LFUtils.db.put('lyrics', {
-                    songId: song.id,
-                    content: lrcContent
-                });
-            }
-            
-            // Add to library
-            await LFUtils.db.put('songs', song);
-            LFLibrary.songs.push(song);
-            
-            // Clear form
-            $('#dev-song-title').value = '';
-            $('#dev-song-artist').value = '';
-            $('#dev-song-album').value = '';
-            $('#dev-audio-file').value = '';
-            $('#dev-lrc-file').value = '';
-            
-            LyricFlow.showToast('Song added successfully!', 'success');
-            LFLibrary.renderSongs();
-            
-        } catch (e) {
-            console.error('Failed to add song:', e);
-            LyricFlow.showToast('Failed to add song', 'error');
+        if (view === 'admin') {
+            this.renderAdminSongs();
+            this.renderUsers();
         }
-    },
-    
-    // Database Management
-    
-    async exportDatabase() {
-        const data = {
-            songs: await LFUtils.db.getAll('songs'),
-            playlists: await LFUtils.db.getAll('playlists'),
-            lyrics: await LFUtils.db.getAll('lyrics'),
-            settings: await LFUtils.db.getAll('settings'),
-            exportedAt: new Date().toISOString(),
-            version: LyricFlow.version
-        };
-        
-        const json = JSON.stringify(data, null, 2);
-        const blob = new Blob([json], { type: 'application/json' });
-        
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `lyricflow-backup-${Date.now()}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-        
-        LyricFlow.showToast('Database exported!', 'success');
-    },
-    
-    async importDatabase() {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.json';
-        
-        input.onchange = async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            
-            try {
-                const text = await LFUtils.readFileAsText(file);
-                const data = JSON.parse(text);
-                
-                if (!confirm(`Import ${data.songs?.length || 0} songs? This will merge with existing data.`)) {
-                    return;
-                }
-                
-                // Import songs
-                if (data.songs) {
-                    for (const song of data.songs) {
-                        await LFUtils.db.put('songs', song);
-                    }
-                }
-                
-                // Import playlists
-                if (data.playlists) {
-                    for (const playlist of data.playlists) {
-                        await LFUtils.db.put('playlists', playlist);
-                    }
-                }
-                
-                // Import lyrics
-                if (data.lyrics) {
-                    for (const lyric of data.lyrics) {
-                        await LFUtils.db.put('lyrics', lyric);
-                    }
-                }
-                
-                // Reload library
-                const songs = await LFUtils.db.getAll('songs');
-                LFLibrary.setSongs(songs);
-                
-                LyricFlow.showToast('Database imported!', 'success');
-                
-            } catch (e) {
-                console.error('Import failed:', e);
-                LyricFlow.showToast('Import failed', 'error');
-            }
-        };
-        
-        input.click();
-    },
-    
-    async clearDatabase() {
-        if (!confirm('WARNING: This will delete ALL data! Are you sure?')) return;
-        if (!confirm('Really sure? This cannot be undone!')) return;
-        
-        // Clear all stores
-        await LFUtils.db.clear('songs');
-        await LFUtils.db.clear('playlists');
-        await LFUtils.db.clear('lyrics');
-        await LFUtils.db.clear('offline');
-        
-        // Clear localStorage
-        LFUtils.storage.clear();
-        
-        LyricFlow.showToast('Database cleared. Reloading...', 'info');
-        
-        setTimeout(() => location.reload(), 1500);
-    },
-    
-    // User Management
-    
-    showCreateUserModal() {
-        // Implementation for creating new users
-        const name = prompt('User name:');
-        const email = prompt('Email:');
-        const role = confirm('Make developer?') ? 'developer' : 'user';
-        
-        if (name && email) {
-            const user = {
-                id: LFUtils.generateUUID(),
-                name,
-                email,
-                role,
-                createdAt: Date.now()
-            };
-            
-            this.mockDB.users.push(user);
-            this.renderUsersList();
-            LyricFlow.showToast('User created!', 'success');
-        }
-    },
-    
-    editUser(id) {
-        const user = this.mockDB.users.find(u => u.id === id);
-        if (!user) return;
-        
-        const newName = prompt('Name:', user.name);
-        const newEmail = prompt('Email:', user.email);
-        
-        if (newName) user.name = newName;
-        if (newEmail) user.email = newEmail;
-        
-        this.renderUsersList();
-    },
-    
-    deleteUser(id) {
-        if (!confirm('Delete this user?')) return;
-        
-        this.mockDB.users = this.mockDB.users.filter(u => u.id !== id);
-        this.renderUsersList();
-        LyricFlow.showToast('User deleted', 'info');
-    },
-    
-    // System Tools
-    
-    async clearCache() {
-        if ('caches' in window) {
-            const keys = await caches.keys();
-            await Promise.all(keys.map(key => caches.delete(key)));
-        }
-        
-        LyricFlow.showToast('Cache cleared!', 'success');
-    },
-    
-    runDiagnostics() {
-        const results = [];
-        
-        // Check APIs
-        results.push(['Service Worker', 'serviceWorker' in navigator]);
-        results.push(['Cache API', 'caches' in window]);
-        results.push(['IndexedDB', 'indexedDB' in window]);
-        results.push(['Web Audio', 'AudioContext' in window || 'webkitAudioContext' in window]);
-        results.push(['WebRTC', 'RTCPeerConnection' in window]);
-        results.push(['Speech Recognition', 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window]);
-        results.push(['Notifications', 'Notification' in window]);
-        
-        // Check storage
-        const storageEstimate = navigator.storage?.estimate;
-        if (storageEstimate) {
-            storageEstimate().then(estimate => {
-                const used = LFUtils.formatFileSize(estimate.usage || 0);
-                const total = estimate.quota ? LFUtils.formatFileSize(estimate.quota) : 'unknown';
-                results.push(['Storage', `${used} / ${total}`]);
-            });
-        }
-        
-        // Display results
-        const report = results.map(([name, status]) => 
-            `${name}: ${status === true ? '✅' : status === false ? '❌' : status}`
-        ).join('\n');
-        
-        alert('Diagnostics Report:\n\n' + report);
-    },
-    
-    simulateOffline() {
-        // Simulate offline mode
-        Object.defineProperty(navigator, 'onLine', {
-            writable: true,
-            value: false
-        });
-        
-        window.dispatchEvent(new Event('offline'));
-        
-        setTimeout(() => {
-            Object.defineProperty(navigator, 'onLine', {
-                writable: true,
-                value: true
-            });
-            window.dispatchEvent(new Event('online'));
-        }, 5000);
-    },
-    
-    runPerformanceTest() {
-        const tests = {
-            render: () => {
-                const start = performance.now();
-                LFLibrary.renderSongs();
-                return performance.now() - start;
-            },
-            search: () => {
-                const start = performance.now();
-                LFLibrary.search('test');
-                return performance.now() - start;
-            },
-            storage: async () => {
-                const start = performance.now();
-                await LFUtils.db.getAll('songs');
-                return performance.now() - start;
-            }
-        };
-        
-        const results = {};
-        
-        for (const [name, test] of Object.entries(tests)) {
-            const time = test();
-            results[name] = typeof time === 'number' ? `${time.toFixed(2)}ms` : 'async';
-        }
-        
-        console.table(results);
-        alert('Performance results logged to console');
-    },
-    
-    // Logging
-    
-    addLog(level, args) {
-        const log = {
-            timestamp: new Date().toISOString(),
-            level,
-            message: args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ')
-        };
-        
-        this.logs.push(log);
-        
-        if (this.logs.length > this.maxLogs) {
-            this.logs.shift();
-        }
-        
-        // Update log viewer if visible
-        if ($('#dev-logs')?.classList.contains('active')) {
-            this.renderLogs();
-        }
-    },
-    
-    renderLogs() {
-        const container = $('#dev-logs-content');
-        if (!container) return;
-        
-        const filter = $('#dev-filter-logs')?.value || 'all';
-        
-        const filtered = this.logs.filter(log => 
-            filter === 'all' || log.level === filter
-        ).slice(-100); // Show last 100
-        
-        container.innerHTML = filtered.map(log => `
-            <div class="log-entry log-${log.level}">
-                <span class="log-time">${new Date(log.timestamp).toLocaleTimeString()}</span>
-                <span class="log-level">${log.level.toUpperCase()}</span>
-                <span class="log-message">${LFUtils.sanitize(log.message)}</span>
-            </div>
-        `).join('');
-        
-        // Auto-scroll
-        container.scrollTop = container.scrollHeight;
-    },
-    
-    clearLogs() {
-        this.logs = [];
-        this.renderLogs();
-    },
-    
-    exportLogs() {
-        const text = this.logs.map(l => 
-            `[${l.timestamp}] ${l.level.toUpperCase()}: ${l.message}`
-        ).join('\n');
-        
-        LFUtils.downloadFile(text, `lyricflow-logs-${Date.now()}.txt`);
-    },
-    
-    filterLogs(level) {
-        this.renderLogs();
-    },
-    
-    // System Info
-    
-    renderSystemInfo() {
-        const container = $('#dev-system-info');
-        if (!container) return;
-        
-        const info = {
-            'User Agent': navigator.userAgent,
-            'Platform': navigator.platform,
-            'Language': navigator.language,
-            'Screen': `${screen.width}x${screen.height}`,
-            'Viewport': `${window.innerWidth}x${window.innerHeight}`,
-            'Device Pixel Ratio': window.devicePixelRatio,
-            'Memory': navigator.deviceMemory ? `${navigator.deviceMemory} GB` : 'unknown',
-            'Cores': navigator.hardwareConcurrency || 'unknown',
-            'Connection': navigator.connection?.effectiveType || 'unknown'
-        };
-        
-        container.innerHTML = Object.entries(info).map(([key, value]) => `
-            <div class="info-row">
-                <span class="info-key">${key}:</span>
-                <span class="info-value">${LFUtils.sanitize(String(value))}</span>
-            </div>
-        `).join('');
-    },
-    
-    // Theme Editor
-    
-    saveCustomTheme() {
-        const name = prompt('Theme name:');
-        if (!name) return;
-        
-        const colors = {
-            primary: $('#dev-theme-primary')?.value,
-            secondary: $('#dev-theme-secondary')?.value,
-            accent: $('#dev-theme-accent')?.value
-        };
-        
-        const theme = {
-            id: 'custom_' + Date.now(),
-            name,
-            colors,
-            isCustom: true
-        };
-        
-        LFThemes.createCustomTheme(name, colors);
-        LyricFlow.showToast('Theme saved!', 'success');
-    },
-    
-    previewTheme() {
-        const colors = {
-            primary: $('#dev-theme-primary')?.value || '#ff006e',
-            secondary: $('#dev-theme-secondary')?.value || '#8338ec',
-            accent: $('#dev-theme-accent')?.value || '#3a86ff'
-        };
-        
-        LFThemes.applyColors(colors);
-    },
-    
-    // API Tester
-    
-    async testAPI() {
-        const method = $('#dev-api-method')?.value;
-        const endpoint = $('#dev-api-endpoint')?.value;
-        const body = $('#dev-api-body')?.value;
-        
-        try {
-            let response;
-            
-            switch (method) {
-                case 'GET':
-                    response = await LFAPI.get(endpoint);
-                    break;
-                case 'POST':
-                    response = await LFAPI.post(endpoint, JSON.parse(body || '{}'));
-                    break;
-                case 'PUT':
-                    response = await LFAPI.put(endpoint, JSON.parse(body || '{}'));
-                    break;
-                case 'DELETE':
-                    response = await LFAPI.delete(endpoint);
-                    break;
-            }
-            
-            $('#dev-api-response').value = JSON.stringify(response, null, 2);
-            
-        } catch (e) {
-            $('#dev-api-response').value = `Error: ${e.message}`;
-        }
-    },
-    
-    updateAPIBody(method) {
-        const bodyField = $('#dev-api-body');
-        if (method === 'GET' || method === 'DELETE') {
-            bodyField.disabled = true;
-            bodyField.placeholder = 'No body for ' + method;
-        } else {
-            bodyField.disabled = false;
-            bodyField.placeholder = 'Request body (JSON)';
-        }
-    },
-    
-    // Utilities
-    
-    injectCSS(css) {
-        const style = document.createElement('style');
-        style.textContent = css;
-        document.head.appendChild(style);
-        return style;
-    },
-    
-    injectScript(code) {
-        const script = document.createElement('script');
-        script.textContent = code;
-        document.head.appendChild(script);
-        return script;
-    },
-    
-    measurePerformance(fn, iterations = 1000) {
-        const times = [];
-        
-        for (let i = 0; i < iterations; i++) {
-            const start = performance.now();
-            fn();
-            times.push(performance.now() - start);
-        }
-        
-        const avg = times.reduce((a, b) => a + b, 0) / times.length;
-        const min = Math.min(...times);
-        const max = Math.max(...times);
-        
-        return { avg, min, max, iterations };
-    },
-    
-    // Easter eggs
-    
-    konamiCode() {
-        const code = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
-        let index = 0;
-        
-        document.addEventListener('keydown', (e) => {
-            if (e.key === code[index]) {
-                index++;
-                if (index === code.length) {
-                    this.activateEasterEgg();
-                    index = 0;
-                }
-            } else {
-                index = 0;
-            }
-        });
-    },
-    
-    activateEasterEgg() {
-        document.body.style.animation = 'spin 2s ease-in-out';
-        setTimeout(() => {
-            document.body.style.animation = '';
-            LyricFlow.showToast('🎮 Konami Code Activated!', 'success');
-        }, 2000);
     }
-};
 
-// Initialize Konami code listener
-LFDev.konamiCode();
+    // Song Management
+    renderSongs(filter = '') {
+        const container = document.getElementById('songList');
+        if (!container) return;
+
+        const filtered = this.state.songs.filter(song => 
+            song.title.toLowerCase().includes(filter.toLowerCase()) ||
+            song.artist.toLowerCase().includes(filter.toLowerCase())
+        );
+
+        container.innerHTML = filtered.map(song => `
+            <div class="song-card" onclick="app.playSong(${song.id})">
+                <div class="song-art">🎵</div>
+                <h3>${this.escapeHtml(song.title)}</h3>
+                <p>${this.escapeHtml(song.artist)}</p>
+                <small>${song.duration}</small>
+            </div>
+        `).join('');
+    }
+
+    playSong(id) {
+        const song = this.state.songs.find(s => s.id === id);
+        if (!song) return;
+
+        this.state.currentSong = song;
+        this.state.currentTime = 0;
+        this.state.isPlaying = true;
+
+        // Update UI
+        document.getElementById('currentTitle').textContent = song.title;
+        document.getElementById('currentArtist').textContent = song.artist;
+        document.getElementById('totalTime').textContent = song.duration;
+        document.getElementById('playBtn').textContent = '⏸️';
+
+        this.renderLyrics();
+        this.startPlayback();
+        this.navigate('player');
+    }
+
+    renderLyrics() {
+        const container = document.getElementById('lyricsDisplay');
+        if (!container || !this.state.currentSong) return;
+
+        const lyrics = this.state.currentSong.lyrics || [];
+        container.innerHTML = lyrics.map((line, index) => `
+            <p data-time="${line.time}" data-index="${index}">${this.escapeHtml(line.text)}</p>
+        `).join('');
+    }
+
+    startPlayback() {
+        if (this.playbackTimer) clearInterval(this.playbackTimer);
+        
+        this.playbackTimer = setInterval(() => {
+            if (!this.state.isPlaying || !this.state.currentSong) return;
+            
+            this.state.currentTime++;
+            
+            // Update progress
+            const progress = (this.state.currentTime / this.state.currentSong.durationSeconds) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+            document.getElementById('currentTime').textContent = this.formatTime(this.state.currentTime);
+            
+            // Update lyrics highlighting
+            this.highlightLyrics();
+            
+            // Auto stop
+            if (this.state.currentTime >= this.state.currentSong.durationSeconds) {
+                this.nextSong();
+            }
+        }, 1000);
+    }
+
+    highlightLyrics() {
+        if (!this.state.currentSong) return;
+        
+        const lines = document.querySelectorAll('#lyricsDisplay p');
+        lines.forEach(line => {
+            const time = parseFloat(line.dataset.time);
+            const nextTime = parseFloat(line.nextElementSibling?.dataset.time || Infinity);
+            
+            if (this.state.currentTime >= time && this.state.currentTime < nextTime) {
+                line.classList.add('active');
+                line.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else {
+                line.classList.remove('active');
+            }
+        });
+    }
+
+    togglePlay() {
+        if (!this.state.currentSong) return;
+        
+        this.state.isPlaying = !this.state.isPlaying;
+        document.getElementById('playBtn').textContent = this.state.isPlaying ? '⏸️' : '▶️';
+    }
+
+    prevSong() {
+        if (!this.state.currentSong) return;
+        const currentIndex = this.state.songs.findIndex(s => s.id === this.state.currentSong.id);
+        const prevIndex = currentIndex > 0 ? currentIndex - 1 : this.state.songs.length - 1;
+        this.playSong(this.state.songs[prevIndex].id);
+    }
+
+    nextSong() {
+        if (!this.state.currentSong) return;
+        const currentIndex = this.state.songs.findIndex(s => s.id === this.state.currentSong.id);
+        const nextIndex = currentIndex < this.state.songs.length - 1 ? currentIndex + 1 : 0;
+        this.playSong(this.state.songs[nextIndex].id);
+    }
+
+    seek(event) {
+        if (!this.state.currentSong) return;
+        const rect = event.currentTarget.getBoundingClientRect();
+        const percent = (event.clientX - rect.left) / rect.width;
+        this.state.currentTime = Math.floor(percent * this.state.currentSong.durationSeconds);
+    }
+
+    // Admin Functions
+    addSong(event) {
+        event.preventDefault();
+        
+        const title = document.getElementById('songTitle').value;
+        const artist = document.getElementById('songArtist').value;
+        const duration = document.getElementById('songDuration').value;
+        const lyricsText = document.getElementById('songLyrics').value;
+
+        const lyrics = this.parseLyrics(lyricsText);
+        const durationSeconds = this.parseDuration(duration);
+
+        const newSong = {
+            id: Date.now(),
+            title,
+            artist,
+            duration,
+            durationSeconds,
+            lyrics
+        };
+
+        this.state.songs.push(newSong);
+        this.saveData();
+        this.renderSongs();
+        this.renderAdminSongs();
+        
+        document.getElementById('addSongForm').reset();
+        alert('Lagu berhasil ditambahkan!');
+    }
+
+    parseLyrics(text) {
+        const lines = text.split('\n');
+        return lines.map((line, index) => {
+            const match = line.match(/\[(\d+):(\d+\.?\d*)\](.*)/);
+            if (match) {
+                const minutes = parseInt(match[1]);
+                const seconds = parseFloat(match[2]);
+                return {
+                    time: minutes * 60 + seconds,
+                    text: match[3].trim()
+                };
+            }
+            return { time: index * 10, text: line.trim() };
+        }).filter(l => l.text);
+    }
+
+    parseDuration(duration) {
+        const [mins, secs] = duration.split(':').map(Number);
+        return (mins * 60) + secs;
+    }
+
+    deleteSong(id) {
+        if (!confirm('Yakin ingin menghapus lagu ini?')) return;
+        this.state.songs = this.state.songs.filter(s => s.id !== id);
+        this.saveData();
+        this.renderSongs();
+        this.renderAdminSongs();
+    }
+
+    renderAdminSongs() {
+        const container = document.getElementById('adminSongList');
+        if (!container) return;
+
+        container.innerHTML = this.state.songs.map(song => `
+            <div class="admin-item">
+                <div>
+                    <strong>${this.escapeHtml(song.title)}</strong>
+                    <p>${this.escapeHtml(song.artist)}</p>
+                </div>
+                <button class="btn-delete" onclick="app.deleteSong(${song.id})">Hapus</button>
+            </div>
+        `).join('');
+    }
+
+    // User Management
+    handleLogin(event) {
+        event.preventDefault();
+        
+        const username = document.getElementById('loginUsername').value;
+        const password = document.getElementById('loginPassword').value;
+        const role = document.getElementById('loginRole').value;
+
+        const user = this.state.users.find(u => 
+            u.username === username && 
+            u.password === password &&
+            u.role === role
+        );
+
+        if (user) {
+            this.state.currentUser = user;
+            this.saveData();
+            this.closeLogin();
+            this.updateUI();
+            alert(`Selamat datang, ${user.username}!`);
+        } else {
+            alert('Username, password, atau role salah!');
+        }
+    }
+
+    handleRegister(event) {
+        event.preventDefault();
+        
+        const username = document.getElementById('regUsername').value;
+        const password = document.getElementById('regPassword').value;
+        const confirmPassword = document.getElementById('regConfirmPassword').value;
+
+        if (password !== confirmPassword) {
+            alert('Password tidak cocok!');
+            return;
+        }
+
+        if (this.state.users.find(u => u.username === username)) {
+            alert('Username sudah terdaftar!');
+            return;
+        }
+
+        const newUser = {
+            username,
+            password,
+            role: 'user'
+        };
+
+        this.state.users.push(newUser);
+        this.saveData();
+        this.closeRegister();
+        alert('Akun berhasil dibuat! Silakan login.');
+    }
+
+    logout() {
+        this.state.currentUser = null;
+        localStorage.removeItem('lyricflow_currentUser');
+        this.updateUI();
+        this.navigate('home');
+    }
+
+    updateUI() {
+        const userSection = document.getElementById('userSection');
+        const adminLink = document.getElementById('adminLink');
+        
+        if (this.state.currentUser) {
+            userSection.innerHTML = `
+                <div class="user-info">
+                    <span>${this.state.currentUser.username}</span>
+                    <span class="user-badge">${this.state.currentUser.role}</span>
+                    <button onclick="app.logout()" class="btn-login">Logout</button>
+                </div>
+            `;
+            
+            if (this.state.currentUser.role === 'admin') {
+                adminLink.style.display = 'block';
+            }
+        } else {
+            userSection.innerHTML = `<button onclick="app.showLogin()" class="btn-login">Login</button>`;
+            adminLink.style.display = 'none';
+        }
+    }
+
+    showLogin() {
+        document.getElementById('loginModal').style.display = 'block';
+    }
+
+    closeLogin() {
+        document.getElementById('loginModal').style.display = 'none';
+    }
+
+    showRegister() {
+        this.closeLogin();
+        document.getElementById('registerModal').style.display = 'block';
+    }
+
+    closeRegister() {
+        document.getElementById('registerModal').style.display = 'none';
+    }
+
+    showAdminTab(tab) {
+        document.querySelectorAll('.admin-tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        
+        document.getElementById(tab + 'Tab').classList.add('active');
+        event.target.classList.add('active');
+    }
+
+    renderUsers() {
+        const container = document.getElementById('userList');
+        if (!container) return;
+
+        container.innerHTML = this.state.users.map(user => `
+            <div class="admin-item">
+                <div>
+                    <strong>${this.escapeHtml(user.username)}</strong>
+                    <span class="user-badge">${user.role}</span>
+                </div>
+                ${user.username !== 'admin' ? `<button class="btn-delete" onclick="app.deleteUser('${user.username}')">Hapus</button>` : ''}
+            </div>
+        `).join('');
+    }
+
+    deleteUser(username) {
+        if (!confirm(`Yakin ingin menghapus user ${username}?`)) return;
+        this.state.users = this.state.users.filter(u => u.username !== username);
+        this.saveData();
+        this.renderUsers();
+    }
+
+    search() {
+        const query = document.getElementById('searchInput').value;
+        this.renderSongs(query);
+    }
+
+    // Utilities
+    formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    showError(message) {
+        alert(message);
+    }
+}
+
+// Initialize App
+const app = new LyricApp();
