@@ -3,918 +3,206 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LyricFlow v1.1</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
-            min-height: 100vh;
-            color: #fff;
-            padding: 20px;
-            padding-bottom: 120px;
-        }
-        .container { max-width: 1200px; margin: 0 auto; }
-        
-        /* Login */
-        .login-page {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-        }
-        .login-page.hidden { opacity: 0; pointer-events: none; }
-        .login-box {
-            background: rgba(255,255,255,0.05);
-            padding: 50px;
-            border-radius: 30px;
-            border: 1px solid rgba(255,255,255,0.1);
-            width: 90%;
-            max-width: 450px;
-            text-align: center;
-        }
-        .login-box h2 {
-            font-size: 2.5em;
-            background: linear-gradient(45deg, #00d2ff, #3a7bd5);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 10px;
-        }
-        .input-group { margin-bottom: 20px; text-align: left; }
-        .input-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: #aaa;
-            font-size: 0.9em;
-            text-transform: uppercase;
-        }
-        .input-group input {
-            width: 100%;
-            padding: 15px;
-            border-radius: 15px;
-            border: 2px solid rgba(255,255,255,0.1);
-            background: rgba(255,255,255,0.05);
-            color: #fff;
-            font-size: 1em;
-        }
-        .login-btn {
-            width: 100%;
-            padding: 18px;
-            border-radius: 15px;
-            border: none;
-            background: linear-gradient(45deg, #00d2ff, #3a7bd5);
-            color: #fff;
-            font-size: 1.1em;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        
-        /* Dev Trigger */
-        .dev-trigger-zone {
-            position: fixed;
-            top: 0; left: 0;
-            width: 50px; height: 50px;
-            z-index: 3000;
-            cursor: pointer;
-        }
-        .dev-login-modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95);
-            z-index: 2500;
-            align-items: center;
-            justify-content: center;
-        }
-        .dev-login-modal.show { display: flex; }
-        .dev-login-box {
-            background: #1a1a2e;
-            padding: 40px;
-            border-radius: 20px;
-            border: 2px solid #00d2ff;
-            max-width: 400px;
-            width: 100%;
-            text-align: center;
-        }
-        
-        /* Main App */
-        header {
-            text-align: center;
-            padding: 30px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 20px;
-            margin-bottom: 25px;
-            position: relative;
-        }
-        .user-bar {
-            position: absolute;
-            top: 20px; right: 20px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        h1 {
-            font-size: 2.2em;
-            background: linear-gradient(45deg, #00d2ff, #3a7bd5);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .stats-bar {
-            display: flex;
-            justify-content: center;
-            gap: 40px;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid rgba(255,255,255,0.1);
-        }
-        .stat-number { font-size: 1.8em; font-weight: bold; color: #00d2ff; }
-        
-        /* File Status */
-        .file-status {
-            background: rgba(0, 210, 255, 0.1);
-            border: 1px solid rgba(0, 210, 255, 0.3);
-            border-radius: 15px;
-            padding: 15px 20px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .refresh-btn {
-            background: rgba(0, 210, 255, 0.2);
-            border: 1px solid #00d2ff;
-            color: #00d2ff;
-            padding: 10px 20px;
-            border-radius: 20px;
-            cursor: pointer;
-        }
-        
-        /* Dev Panel */
-        .dev-panel {
-            display: none;
-            background: rgba(0, 210, 255, 0.05);
-            border: 2px solid rgba(0, 210, 255, 0.3);
-            border-radius: 20px;
-            padding: 25px;
-            margin-bottom: 25px;
-        }
-        .dev-panel.show { display: block; }
-        .dev-btn {
-            padding: 15px 20px;
-            border-radius: 15px;
-            border: 1px solid rgba(0, 210, 255, 0.3);
-            background: rgba(0, 210, 255, 0.1);
-            color: #fff;
-            cursor: pointer;
-            margin: 5px;
-        }
-        
-        /* Songs */
-        .song-list { display: grid; gap: 15px; }
-        .song-card {
-            background: rgba(255,255,255,0.05);
-            border-radius: 15px;
-            padding: 20px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        .play-icon {
-            width: 50px; height: 50px;
-            background: linear-gradient(45deg, #00d2ff, #3a7bd5);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-        .song-info { flex: 1; }
-        .genre-tag {
-            padding: 4px 12px;
-            background: rgba(0, 210, 255, 0.2);
-            color: #00d2ff;
-            border-radius: 12px;
-            font-size: 0.75em;
-        }
-        
-        /* Player */
-        .player-bar {
-            position: fixed;
-            bottom: 0; left: 0; right: 0;
-            background: rgba(15, 12, 41, 0.98);
-            border-top: 1px solid rgba(0, 210, 255, 0.3);
-            padding: 15px 20px;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            transform: translateY(100%);
-            transition: transform 0.3s;
-        }
-        .player-bar.active { transform: translateY(0); }
-        .control-btn.play-pause {
-            width: 50px; height: 50px;
-            background: linear-gradient(45deg, #00d2ff, #3a7bd5);
-            border-radius: 50%;
-            border: none;
-            color: #fff;
-            font-size: 1.3em;
-            cursor: pointer;
-        }
-        .progress-bar {
-            flex: 1;
-            height: 6px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 3px;
-            cursor: pointer;
-        }
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #00d2ff, #3a7bd5);
-            border-radius: 3px;
-            width: 0%;
-        }
-        
-        /* Lyrics Modal */
-        .lyrics-modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95);
-            z-index: 1001;
-            overflow-y: auto;
-            padding: 20px;
-        }
-        .lyrics-modal.show { display: block; }
-        .lyrics-content {
-            max-width: 700px;
-            margin: 50px auto;
-            background: #1a1a2e;
-            border-radius: 25px;
-            padding: 40px;
-        }
-        .close-btn {
-            float: right;
-            background: none;
-            border: none;
-            color: #fff;
-            font-size: 2em;
-            cursor: pointer;
-        }
-    </style>
+    <title>LyricFlow v00.00.00</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Dev Trigger -->
-    <div class="dev-trigger-zone" onclick="handleDevClick()"></div>
-    
-    <!-- Dev Login -->
-    <div class="dev-login-modal" id="devLoginModal">
-        <div class="dev-login-box">
-            <h3 style="color: #00d2ff; margin-bottom: 20px;">Developer Access</h3>
-            <input type="text" id="devUsername" placeholder="Username" style="width: 100%; margin-bottom: 10px; padding: 10px;">
-            <input type="password" id="devPassword" placeholder="Password" style="width: 100%; margin-bottom: 10px; padding: 10px;">
-            <input type="password" id="devSecret" placeholder="Secret Key" style="width: 100%; margin-bottom: 20px; padding: 10px;">
-            <button class="login-btn" onclick="devLogin()">Access</button>
-            <button onclick="closeDevLogin()" style="background: none; border: none; color: #888; margin-top: 10px; cursor: pointer;">Cancel</button>
-        </div>
-    </div>
-    
-    <!-- Lyrics Modal -->
-    <div class="lyrics-modal" id="lyricsModal">
-        <div class="lyrics-content">
-            <button class="close-btn" onclick="closeLyrics()">&times;</button>
-            <h2 id="modalTitle" style="color: #00d2ff; margin-bottom: 10px;">Title</h2>
-            <p id="modalArtist" style="color: #888; margin-bottom: 10px;">Artist</p>
-            <span id="modalGenre" class="genre-tag">Genre</span>
-            <pre id="modalLyrics" style="margin-top: 20px; line-height: 2; white-space: pre-wrap;">Lyrics</pre>
+    <!-- Loading Screen -->
+    <div id="loader" class="loader">
+        <div class="loader-content">
+            <div class="spinner"></div>
+            <p>Loading LyricFlow...</p>
         </div>
     </div>
 
-    <!-- Login Page -->
-    <div class="login-page" id="loginPage">
-        <div class="login-box">
-            <h2>🎵 LyricFlow</h2>
-            <p style="color: #888; margin-bottom: 30px;">v1.1 - Edit songs.json to add music</p>
-            <div class="input-group">
-                <label>Username</label>
-                <input type="text" id="loginUsername" placeholder="Enter username">
-            </div>
-            <div class="input-group">
-                <label>Password</label>
-                <input type="password" id="loginPassword" placeholder="Enter password">
-            </div>
-            <button class="login-btn" onclick="userLogin()">Login</button>
-            <p style="margin-top: 20px; color: #888;">
-                New user? <a onclick="userRegister()" style="color: #00d2ff; cursor: pointer;">Register</a>
-            </p>
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Login</h2>
+            <form id="loginForm">
+                <input type="text" id="username" placeholder="Username" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button type="submit">Masuk</button>
+                <p id="loginError" class="error"></p>
+            </form>
+            <div class="secret-dev" onclick="showDevLogin()">👤</div>
+        </div>
+    </div>
+
+    <!-- Hidden Developer Login -->
+    <div id="devLoginModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close" onclick="closeDevLogin()">&times;</span>
+            <h2>🔐 Developer Access</h2>
+            <form id="devLoginForm">
+                <input type="text" id="devUsername" placeholder="Dev Username" required>
+                <input type="password" id="devPassword" placeholder="Dev Password" required>
+                <input type="password" id="devSecretKey" placeholder="Secret Key" required>
+                <button type="submit">Akses Developer</button>
+                <p id="devLoginError" class="error"></p>
+            </form>
         </div>
     </div>
 
     <!-- Main App -->
-    <div class="container" id="mainApp" style="display: none;">
-        
-        <!-- File Status -->
-        <div class="file-status">
-            <div>
-                <span style="color: #00d2ff;">🎵 songs.json:</span>
-                <span id="songFileStatus">Loading...</span>
-                <span style="color: #888; margin-left: 20px;">👥 users.json:</span>
-                <span id="userFileStatus">0 users</span>
+    <div id="app" class="app hidden">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="logo">
+                <span class="logo-icon">🎵</span>
+                <span class="logo-text">LyricFlow</span>
+                <span class="version">v00.00.00</span>
             </div>
-            <button class="refresh-btn" onclick="loadSongsFromFile()">🔄 Reload Songs</button>
-        </div>
-
-        <!-- Dev Panel -->
-        <div class="dev-panel" id="devPanel">
-            <h3 style="color: #00d2ff; margin-bottom: 15px;">🔐 Developer Panel</h3>
-            <button class="dev-btn" onclick="downloadSongsTemplate()">📥 Download songs.json Template</button>
-            <button class="dev-btn" onclick="showSongsFormat()">📋 Show Format</button>
-            <button class="dev-btn" onclick="exportUsers()">💾 Export users.json</button>
-            <button class="dev-btn" onclick="hideDevPanel()">🔒 Hide</button>
             
-            <div id="formatHelp" style="display: none; margin-top: 20px; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 10px;">
-                <h4 style="color: #00d2ff; margin-bottom: 10px;">songs.json Format:</h4>
-                <pre style="background: #0d1117; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85em;">
-[
-  {
-    "id": 1,
-    "title": "Song Name",
-    "artist": "Artist Name", 
-    "genre": "Pop",
-    "audioUrl": "https://example.com/song.mp3",
-    "lyrics": "Line 1\nLine 2\nLine 3"
-  }
-]</pre>
-                <p style="margin-top: 10px; color: #888;">Edit songs.json file, then click "Reload Songs"</p>
-            </div>
-        </div>
+            <ul class="nav-links">
+                <li class="active" onclick="showPage('home')">
+                    <span>🏠</span> Beranda
+                </li>
+                <li onclick="showPage('library')">
+                    <span>📚</span> Library
+                </li>
+                <li onclick="showPage('favorites')">
+                    <span>❤️</span> Favorit
+                </li>
+                <li id="devMenuItem" class="hidden" onclick="showPage('developer')">
+                    <span>⚙️</span> Developer
+                </li>
+            </ul>
 
-        <header>
-            <div class="user-bar">
-                <div>
-                    <div style="font-weight: bold;" id="displayUsername">User</div>
-                    <div style="font-size: 0.8em; color: #888;" id="displayRole">USER</div>
+            <div class="user-section">
+                <div class="user-info">
+                    <span id="userAvatar">👤</span>
+                    <span id="userName">Guest</span>
                 </div>
-                <button class="logout-btn" onclick="logout()">Logout</button>
+                <button onclick="logout()" class="logout-btn">Keluar</button>
             </div>
-            <h1>LyricFlow</h1>
-            <p style="color: #888;">Music from songs.json</p>
-            <div class="stats-bar">
-                <div class="stat-item">
-                    <div class="stat-number" id="favCount">0</div>
-                    <div style="font-size: 0.8em; color: #888;">Favorites</div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Cari lagu...">
+                    <button onclick="searchSongs()">🔍</button>
                 </div>
-                <div class="stat-item">
-                    <div class="stat-number" id="totalSongs">0</div>
-                    <div style="font-size: 0.8em; color: #888;">Songs</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number" id="totalArtists">0</div>
-                    <div style="font-size: 0.8em; color: #888;">Artists</div>
-                </div>
-            </div>
-        </header>
+                <button onclick="openLogin()" id="loginBtn" class="login-btn">Login</button>
+            </header>
 
-        <!-- Songs List -->
-        <div style="margin-bottom: 20px;">
-            <input type="text" id="searchInput" placeholder="🔍 Search songs..." 
-                style="width: 100%; padding: 15px 20px; border-radius: 50px; border: 2px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: #fff;"
-                onkeyup="searchSongs()">
-        </div>
-        
-        <div id="songList" class="song-list">
-            <div style="text-align: center; padding: 60px; color: #888;">
-                Loading songs from songs.json...
-            </div>
-        </div>
-    </div>
-
-    <!-- Player -->
-    <div class="player-bar" id="playerBar">
-        <div style="flex: 1;">
-            <div id="playerTitle" style="font-weight: bold;">Select a song</div>
-            <div id="playerArtist" style="font-size: 0.85em; color: #888;">-</div>
-        </div>
-        <button class="control-btn" onclick="playPrev()" style="background: none; border: none; color: #fff; font-size: 1.5em; cursor: pointer;">⏮</button>
-        <button class="control-btn play-pause" onclick="togglePlay()">▶</button>
-        <button class="control-btn" onclick="playNext()" style="background: none; border: none; color: #fff; font-size: 1.5em; cursor: pointer;">⏭</button>
-        <div class="progress-bar" onclick="seek(event)">
-            <div class="progress-fill" id="progressFill"></div>
-        </div>
-    </div>
-
-    <script>
-        // ============================================
-        // CONFIGURATION
-        // ============================================
-        const DEV_CREDENTIALS = {
-            username: 'admin',
-            password: 'dev2024',
-            secretKey: 'lyricflow_secret_99'
-        };
-
-        // ============================================
-        // STATE
-        // ============================================
-        let currentUser = null;
-        let isDevMode = false;
-        let devClickCount = 0;
-        let songs = []; // Loaded from songs.json
-        let users = [];
-        let audio = new Audio();
-        let currentSongIndex = -1;
-        let isPlaying = false;
-        let favorites = [];
-        let history = [];
-
-        // ============================================
-        // FILE SYSTEM OPERATIONS
-        // ============================================
-        
-        // Load songs from localStorage (simulating songs.json)
-        function loadSongsFromFile() {
-            const saved = localStorage.getItem('lyricflow_songs');
-            if (saved) {
-                try {
-                    songs = JSON.parse(saved);
-                    updateSongStatus();
-                    renderSongs();
-                    showNotification(`Loaded ${songs.length} songs from songs.json`);
-                } catch (e) {
-                    showNotification('Error parsing songs.json!', 'error');
-                    songs = [];
-                }
-            } else {
-                // Create template if not exists
-                createSongsTemplate();
-                songs = [];
-            }
-        }
-
-        // Create songs.json template
-        function createSongsTemplate() {
-            const template = [
-                {
-                    id: 1,
-                    title: "Perfect",
-                    artist: "Ed Sheeran",
-                    genre: "Pop",
-                    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-                    lyrics: "I found a love for me\nDarling, just dive right in\nAnd follow my lead"
-                },
-                {
-                    id: 2,
-                    title: "Someone Like You",
-                    artist: "Adele",
-                    genre: "Pop",
-                    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
-                    lyrics: "I heard that you're settled down\nThat you found a girl\nAnd you're married now"
-                }
-            ];
-            
-            localStorage.setItem('lyricflow_songs', JSON.stringify(template, null, 2));
-            showNotification('Created songs.json template!');
-        }
-
-        // Save songs to "file"
-        function saveSongsToFile() {
-            localStorage.setItem('lyricflow_songs', JSON.stringify(songs, null, 2));
-        }
-
-        // Download songs.json template
-        function downloadSongsTemplate() {
-            const template = [
-                {
-                    id: 1,
-                    title: "Example Song",
-                    artist: "Artist Name",
-                    genre: "Pop",
-                    audioUrl: "https://example.com/song.mp3",
-                    lyrics: "Line 1\nLine 2\nLine 3"
-                }
-            ];
-            
-            const blob = new Blob([JSON.stringify(template, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'songs.json';
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-
-        // ============================================
-        // DEV ACCESS
-        // ============================================
-        function handleDevClick() {
-            devClickCount++;
-            if (devClickCount >= 5) {
-                devClickCount = 0;
-                document.getElementById('devLoginModal').classList.add('show');
-            }
-            setTimeout(() => devClickCount = 0, 2000);
-        }
-
-        function closeDevLogin() {
-            document.getElementById('devLoginModal').classList.remove('show');
-        }
-
-        function devLogin() {
-            const u = document.getElementById('devUsername').value;
-            const p = document.getElementById('devPassword').value;
-            const s = document.getElementById('devSecret').value;
-
-            if (u === DEV_CREDENTIALS.username && 
-                p === DEV_CREDENTIALS.password && 
-                s === DEV_CREDENTIALS.secretKey) {
+            <!-- Pages -->
+            <div id="page-home" class="page active">
+                <h1>Selamat Datang di LyricFlow</h1>
+                <p class="subtitle">Platform lirik musik modern dengan sinkronisasi waktu</p>
                 
-                isDevMode = true;
-                currentUser = { username: 'admin', role: 'developer' };
-                closeDevLogin();
-                showMainApp();
-            } else {
-                alert('Access Denied!');
-            }
-        }
-
-        function hideDevPanel() {
-            document.getElementById('devPanel').classList.remove('show');
-        }
-
-        function showSongsFormat() {
-            const help = document.getElementById('formatHelp');
-            help.style.display = help.style.display === 'none' ? 'block' : 'none';
-        }
-
-        // ============================================
-        // USER AUTH
-        // ============================================
-        function loadUsers() {
-            const saved = localStorage.getItem('lyricflow_users');
-            users = saved ? JSON.parse(saved) : [];
-            document.getElementById('userFileStatus').textContent = `${users.length} users`;
-        }
-
-        function saveUsers() {
-            localStorage.setItem('lyricflow_users', JSON.stringify(users));
-            document.getElementById('userFileStatus').textContent = `${users.length} users`;
-        }
-
-        function userLogin() {
-            const u = document.getElementById('loginUsername').value.trim();
-            const p = document.getElementById('loginPassword').value;
-
-            if (!u || !p) {
-                alert('Fill all fields!');
-                return;
-            }
-
-            loadUsers();
-            const user = users.find(x => x.username === u && x.password === p);
-
-            if (!user) {
-                alert('Invalid credentials!');
-                return;
-            }
-
-            if (user.banned) {
-                alert('Account banned!');
-                return;
-            }
-
-            currentUser = user;
-            loadUserData();
-            showMainApp();
-        }
-
-        function userRegister() {
-            const u = prompt('Username:');
-            if (!u) return;
-            
-            const p = prompt('Password:');
-            if (!p) return;
-
-            loadUsers();
-            
-            if (users.find(x => x.username === u)) {
-                alert('Username exists!');
-                return;
-            }
-
-            users.push({
-                username: u,
-                password: p,
-                role: 'user',
-                createdAt: new Date().toISOString()
-            });
-            
-            saveUsers();
-            alert('Registered! Please login.');
-        }
-
-        function logout() {
-            saveUserData();
-            currentUser = null;
-            isDevMode = false;
-            location.reload();
-        }
-
-        // ============================================
-        // USER DATA
-        // ============================================
-        function loadUserData() {
-            if (!currentUser || isDevMode) return;
-            
-            const favKey = `lyricflow_fav_${currentUser.username}`;
-            const histKey = `lyricflow_hist_${currentUser.username}`;
-            
-            favorites = JSON.parse(localStorage.getItem(favKey) || '[]');
-            history = JSON.parse(localStorage.getItem(histKey) || '[]');
-            
-            updateStats();
-        }
-
-        function saveUserData() {
-            if (!currentUser || isDevMode) return;
-            
-            const favKey = `lyricflow_fav_${currentUser.username}`;
-            const histKey = `lyricflow_hist_${currentUser.username}`;
-            
-            localStorage.setItem(favKey, JSON.stringify(favorites));
-            localStorage.setItem(histKey, JSON.stringify(history));
-        }
-
-        function toggleFavorite(songId) {
-            if (!currentUser || isDevMode) return;
-            
-            const idx = favorites.indexOf(songId);
-            if (idx > -1) favorites.splice(idx, 1);
-            else favorites.push(songId);
-            
-            saveUserData();
-            updateStats();
-            renderSongs();
-        }
-
-        function addToHistory(songId) {
-            if (!currentUser || isDevMode) return;
-            
-            history = history.filter(id => id !== songId);
-            history.unshift(songId);
-            if (history.length > 20) history.pop();
-            
-            saveUserData();
-            updateStats();
-        }
-
-        // ============================================
-        // MAIN APP
-        // ============================================
-        function showMainApp() {
-            document.getElementById('loginPage').classList.add('hidden');
-            document.getElementById('mainApp').style.display = 'block';
-            
-            document.getElementById('displayUsername').textContent = currentUser.username;
-            document.getElementById('displayRole').textContent = isDevMode ? 'DEVELOPER' : 'USER';
-            
-            if (isDevMode) {
-                document.getElementById('devPanel').classList.add('show');
-            }
-            
-            loadSongsFromFile();
-            updateStats();
-        }
-
-        function updateStats() {
-            document.getElementById('favCount').textContent = favorites.length;
-            document.getElementById('totalSongs').textContent = songs.length;
-            document.getElementById('totalArtists').textContent = [...new Set(songs.map(s => s.artist))].length;
-            document.getElementById('historyCount') && (document.getElementById('historyCount').textContent = history.length);
-        }
-
-        function updateSongStatus() {
-            document.getElementById('songFileStatus').innerHTML = 
-                `<span style="color: #2ecc71;">${songs.length} songs loaded ✓</span>`;
-        }
-
-        // ============================================
-        // RENDER SONGS
-        // ============================================
-        function renderSongs(searchTerm = '') {
-            const container = document.getElementById('songList');
-            
-            let filtered = songs;
-            if (searchTerm) {
-                const term = searchTerm.toLowerCase();
-                filtered = songs.filter(s => 
-                    s.title.toLowerCase().includes(term) ||
-                    s.artist.toLowerCase().includes(term) ||
-                    s.genre.toLowerCase().includes(term)
-                );
-            }
-            
-            if (filtered.length === 0) {
-                container.innerHTML = `
-                    <div style="text-align: center; padding: 60px; color: #888;">
-                        ${songs.length === 0 ? 
-                            'No songs found. Create songs.json file!' : 
-                            'No songs match your search.'}
+                <div class="featured-section">
+                    <h2>🎶 Lagu Terbaru</h2>
+                    <div id="songList" class="song-grid">
+                        <!-- Songs loaded dynamically -->
                     </div>
-                `;
-                return;
-            }
-            
-            container.innerHTML = filtered.map((song, i) => {
-                const isFav = favorites.includes(song.id);
-                return `
-                    <div class="song-card" style="animation-delay: ${i * 0.05}s">
-                        <div class="play-icon" onclick="playSong(${song.id})">▶</div>
-                        <div class="song-info" onclick="showLyrics(${song.id})">
-                            <h3>${escapeHtml(song.title)}</h3>
-                            <p style="color: #888;">${escapeHtml(song.artist)}</p>
-                            <span class="genre-tag">${escapeHtml(song.genre)}</span>
-                        </div>
-                        ${!isDevMode ? `
-                            <button onclick="event.stopPropagation(); toggleFavorite(${song.id})" 
-                                style="background: ${isFav ? '#e74c3c' : 'rgba(255,255,255,0.1)'}; border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer;">
-                                ${isFav ? '❤️' : '🤍'}
-                            </button>
-                        ` : `
-                            <button onclick="event.stopPropagation(); deleteSong(${song.id})" 
-                                style="background: rgba(231, 76, 60, 0.2); border: none; color: #e74c3c; width: 40px; height: 40px; border-radius: 50%; cursor: pointer;">
-                                🗑
-                            </button>
-                        `}
+                </div>
+            </div>
+
+            <div id="page-library" class="page">
+                <h1>Library</h1>
+                <p>Semua lagu tersedia di sini.</p>
+                <div id="libraryList" class="song-list"></div>
+            </div>
+
+            <div id="page-favorites" class="page">
+                <h1>Favorit</h1>
+                <p>Lagu favorit Anda akan muncul di sini.</p>
+                <div id="favoritesList" class="song-list"></div>
+            </div>
+
+            <div id="page-developer" class="page hidden">
+                <h1>🔧 Panel Developer</h1>
+                <div class="dev-stats">
+                    <div class="stat-card">
+                        <h3>Total Users</h3>
+                        <p id="totalUsers">0</p>
                     </div>
-                `;
-            }).join('');
-        }
+                    <div class="stat-card">
+                        <h3>Total Songs</h3>
+                        <p id="totalSongs">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Versi Saat Ini</h3>
+                        <p>v00.00.00</p>
+                    </div>
+                </div>
+                
+                <div class="dev-actions">
+                    <h3>Manajemen Lagu</h3>
+                    <button onclick="showAddSongForm()" class="btn-primary">+ Tambah Lagu Baru</button>
+                    
+                    <div id="addSongForm" class="hidden form-section">
+                        <input type="text" id="newSongTitle" placeholder="Judul Lagu">
+                        <input type="text" id="newSongArtist" placeholder="Artis">
+                        <input type="url" id="newSongUrl" placeholder="URL Audio (MP3)">
+                        <textarea id="newSongLyrics" placeholder="Lirik dengan format [mm:ss]"></textarea>
+                        <button onclick="addNewSong()">Simpan Lagu</button>
+                    </div>
+                </div>
 
-        function searchSongs() {
-            const term = document.getElementById('searchInput').value;
-            renderSongs(term);
-        }
+                <div class="user-management">
+                    <h3>Daftar Pengguna</h3>
+                    <table id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Role</th>
+                                <th>Login Terakhir</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
 
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        // ============================================
-        // AUDIO PLAYER
-        // ============================================
-        function playSong(id) {
-            const idx = songs.findIndex(s => s.id === id);
-            if (idx === -1) return;
+        <!-- Music Player -->
+        <div id="player" class="player hidden">
+            <div class="player-info">
+                <img id="playerCover" src="assets/logo.svg" alt="Cover">
+                <div class="player-details">
+                    <h4 id="playerTitle">Pilih Lagu</h4>
+                    <p id="playerArtist">-</p>
+                </div>
+            </div>
             
-            currentSongIndex = idx;
-            const song = songs[idx];
+            <div class="player-controls">
+                <button onclick="prevSong()">⏮</button>
+                <button onclick="togglePlay()" id="playBtn">▶</button>
+                <button onclick="nextSong()">⏭</button>
+            </div>
             
-            audio.src = song.audioUrl;
-            audio.play();
-            isPlaying = true;
+            <div class="player-progress">
+                <span id="currentTime">0:00</span>
+                <input type="range" id="progressBar" value="0" min="0" max="100">
+                <span id="duration">0:00</span>
+            </div>
             
-            document.getElementById('playerTitle').textContent = song.title;
-            document.getElementById('playerArtist').textContent = song.artist;
-            document.getElementById('playerBar').classList.add('active');
-            document.querySelector('.play-pause').textContent = '⏸';
-            
-            if (!isDevMode) addToHistory(id);
-        }
+            <button onclick="toggleLyrics()" class="lyrics-btn">📝 Lirik</button>
+        </div>
 
-        function togglePlay() {
-            if (currentSongIndex === -1) return;
-            
-            if (isPlaying) {
-                audio.pause();
-                document.querySelector('.play-pause').textContent = '▶';
-            } else {
-                audio.play();
-                document.querySelector('.play-pause').textContent = '⏸';
-            }
-            isPlaying = !isPlaying;
-        }
+        <!-- Lyrics Panel -->
+        <div id="lyricsPanel" class="lyrics-panel hidden">
+            <div class="lyrics-header">
+                <h3 id="lyricsTitle">Lirik</h3>
+                <button onclick="toggleLyrics()" class="close-btn">×</button>
+            </div>
+            <div id="lyricsContent" class="lyrics-content">
+                <p>Pilih lagu untuk melihat lirik</p>
+            </div>
+        </div>
+    </div>
 
-        function playNext() {
-            if (currentSongIndex === -1 || songs.length === 0) return;
-            let next = currentSongIndex + 1;
-            if (next >= songs.length) next = 0;
-            playSong(songs[next].id);
-        }
-
-        function playPrev() {
-            if (currentSongIndex === -1 || songs.length === 0) return;
-            let prev = currentSongIndex - 1;
-            if (prev < 0) prev = songs.length - 1;
-            playSong(songs[prev].id);
-        }
-
-        function seek(e) {
-            const rect = e.currentTarget.getBoundingClientRect();
-            const pos = (e.clientX - rect.left) / rect.width;
-            audio.currentTime = pos * audio.duration;
-        }
-
-        // Update progress bar
-        audio.addEventListener('timeupdate', () => {
-            const pct = (audio.currentTime / audio.duration) * 100;
-            document.getElementById('progressFill').style.width = pct + '%';
-        });
-
-        // ============================================
-        // LYRICS
-        // ============================================
-        function showLyrics(id) {
-            const song = songs.find(s => s.id === id);
-            if (!song) return;
-            
-            document.getElementById('modalTitle').textContent = song.title;
-            document.getElementById('modalArtist').textContent = song.artist;
-            document.getElementById('modalGenre').textContent = song.genre;
-            document.getElementById('modalLyrics').textContent = song.lyrics;
-            document.getElementById('lyricsModal').classList.add('show');
-        }
-
-        function closeLyrics() {
-            document.getElementById('lyricsModal').classList.remove('show');
-        }
-
-        // ============================================
-        // DEV FUNCTIONS
-        // ============================================
-        function deleteSong(id) {
-            if (!isDevMode) return;
-            if (!confirm('Delete this song from songs.json?')) return;
-            
-            songs = songs.filter(s => s.id !== id);
-            saveSongsToFile();
-            renderSongs();
-            updateStats();
-            showNotification('Song deleted! Reload to see changes.');
-        }
-
-        function exportUsers() {
-            const blob = new Blob([JSON.stringify(users, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'users.json';
-            a.click();
-        }
-
-        // ============================================
-        // NOTIFICATION
-        // ============================================
-        function showNotification(msg, type = 'success') {
-            const div = document.createElement('div');
-            div.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: ${type === 'error' ? '#e74c3c' : '#2ecc71'};
-                color: white;
-                padding: 15px 25px;
-                border-radius: 10px;
-                z-index: 5000;
-                animation: slideInRight 0.3s ease;
-            `;
-            div.textContent = msg;
-            document.body.appendChild(div);
-            
-            setTimeout(() => {
-                div.style.animation = 'slideOutRight 0.3s ease';
-                setTimeout(() => div.remove(), 300);
-            }, 3000);
-        }
-
-        // ============================================
-        // INIT
-        // ============================================
-        window.onload = () => {
-            loadUsers();
-            
-            // Auto-create template if no songs
-            if (!localStorage.getItem('lyricflow_songs')) {
-                createSongsTemplate();
-            }
-        };
-
-        // Keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                closeLyrics();
-                closeDevLogin();
-            }
-            if (e.code === 'Space' && e.target.tagName !== 'INPUT') {
-                e.preventDefault();
-                togglePlay();
-            }
-        });
-    </script>
+    <!-- Scripts -->
+    <script src="js/app.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/player.js"></script>
 </body>
 </html>
