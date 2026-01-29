@@ -47,6 +47,29 @@ async function loadSongs() {
     }
 }
 
+async function loadSongs() {
+    try {
+        const songFiles = [
+            'songs/song1.html',
+            'songs/song2.html'
+        ];
+
+        songs = [];
+
+        for (const file of songFiles) {
+            const song = await loadSongFromHTML(file);
+            if (song) songs.push(song);
+        }
+
+        renderSongList();
+
+    } catch (err) {
+        console.error('Gagal load lagu:', err);
+        songs = [];
+        renderSongList();
+    }
+}
+
 // Render daftar lagu
 function renderSongList() {
     const container = document.getElementById('songList');
