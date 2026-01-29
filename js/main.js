@@ -372,6 +372,19 @@ function refreshSongs() {
     }, 1000);
 }
 
+async function loadSongFromHTML(path) {
+    const res = await fetch(path);
+    const text = await res.text();
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(text, 'text/html');
+
+    const json = doc.querySelector('#song-data')?.textContent;
+    if (!json) return null;
+
+    return JSON.parse(json);
+}
+
 // Keyboard shortcuts
 document.addEventListener('keydown', (e) => {
     const player = document.getElementById('audioPlayer');
