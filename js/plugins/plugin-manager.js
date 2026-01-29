@@ -1,139 +1,364 @@
 /**
- * PLUGIN MANAGER v1.2
- * Extensible Plugin Architecture
+ * LYRICFLOW v1.3 - PLUGIN MANAGER
+ * Plugin system for extensibility
  */
 
-App.plugins = {
-    registry: new Map(),
-    hooks: {},
-
+const LFPluginManager = {
+    plugins: new Map(),
+    hooks: new Map(),
+    api: null,
+    
     init() {
-        // Load built-in plugins
-        this.loadBuiltins();
+        this.api = this.createAPI();
+        this.loadBuiltInPlugins();
+        this.loadUserPlugins();
         
-        // Load external plugins from localStorage
-        this.loadStored();
+        console.log('Plugin manager initialized');
     },
-
-    loadBuiltins() {
-        // Example built-in plugin: Sleep Timer Quick Access
-        this.register('sleepTimer', {
-            name: 'Sleep Timer',
-            version: '1.0',
-            init() {
-                // Add quick access button
-                const btn = document.createElement('button');
-                btn.textContent = '⏱️';
-                btn.title = 'Sleep Timer (Ctrl+T)';
-                btn.onclick = () => {
-                    const mins = prompt('Set sleep timer (minutes):', '30');
-                    if (mins) App.player.setSleepTimer(parseInt(mins));
-                };
-                document.querySelector('.top-actions').appendChild(btn);
-            }
-        });
-    },
-
-    register(id, plugin) {
-        if (this.registry.has(id)) {
-            console.warn(`Plugin ${id} already registered`);
-            return;
-        }
-        
-        plugin.id = id;
-        this.registry.set(id, plugin);
-        
-        if (plugin.init) {
-            try {
-                plugin.init();
-                console.log(`✅ Plugin loaded: ${plugin.name}`);
-            } catch (err) {
-                console.error(`❌ Plugin failed: ${plugin.name}`, err);
-            }
-        }
-        
-        this.updateUI();
-    },
-
-    unregister(id) {
-        const plugin = this.registry.get(id);
-        if (plugin && plugin.destroy) {
-            plugin.destroy();
-        }
-        this.registry.delete(id);
-        this.updateUI();
-    },
-
-    load() {
-        // Load from file input
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.js';
-        input.onchange = (e) => {
-            const file = e.target.files[0];
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                try {
-                    // Sandbox evaluation
-                    const pluginCode = event.target.result;
-                    const pluginFunc = new Function('app', 'return ' + pluginCode);
-                    const plugin = pluginFunc(App);
-                    
-                    this.register(plugin.id || `plugin_${Date.now()}`, plugin);
-                    
-                    // Store in localStorage
-                    const stored = JSON.parse(localStorage.getItem('lf_plugins') || '[]');
-                    stored.push({ id: plugin.id, code: pluginCode });
-                    localStorage.setItem('lf_plugins', JSON.stringify(stored));
-                    
-                    App.toast.show(`Plugin "${plugin.name}" loaded!`, 'success');
-                } catch (err) {
-                    App.toast.show('Invalid plugin file', 'error');
-                }
-            };
-            reader.readAsText(file);
+    
+    createAPI() {
+        return {
+            // Core access
+            LyricFlow,
+            Player: LFPlayer,
+            Lyrics: LFLyrics,
+            Library: LFLibrary,
+            UI: LFUI,
+            
+            // Utilities
+            Utils: LFUtils,
+            storage: LFUtils.storage,
+            
+            // Registration
+            registerHook: (name, callback) => this.registerHook(name, callback),
+            unregisterHook: (name, callback) => this.unregisterHook(name, callback),
+            
+            // UI components
+            addMenuItem: (menu, item) => this.addMenuItem(menu, item),
+            addSettingsPanel: (panel) => this.addSettingsPanel(panel),
+            addVisualizer: (renderer) => this.addVisualizer(renderer),
+            
+            // Events
+            on: (event, callback) => LyricFlow.events.on(event, callback),
+            emit: (event, data) => LyricFlow.events.emit(event, data),
+            
+            // Audio processing
+            addAudioNode: (node) => this.addAudioNode(node),
+            
+            // Storage
+            getData: (key) => this.getPluginData(key),
+            setData: (key, value) => this.setPluginData(key, value)
         };
-        input.click();
     },
-
-    loadStored() {
-        const stored = JSON.parse(localStorage.getItem('lf_plugins') || '[]');
-        stored.forEach(({ code }) => {
+    
+    // Plugin registration
+    
+    register(id, plugin) {
+        if (this.plugins.has(id)) {
+            console.warn(`Plugin ${id} already registered`);
+            return false;
+        }
+        
+        // Validate plugin structure
+        if (!plugin.name || !plugin.version) {
+            console.error('Plugin must have name and version');
+            return false;
+        }
+        
+        const pluginInstance = {
+            id,
+            name: plugin.name,
+            version: plugin.version,
+            description: plugin.description || '',
+            author: plugin.author || 'Unknown',
+            enabled: false,
+            instance: null,
+            hooks: [],
+            sandbox: null
+        };
+        
+        this.plugins.set(id, pluginInstance);
+        
+        // Auto-enable if specified
+        if (plugin.autoEnable) {
+            this.enable(id);
+        }
+        
+        return true;
+    },
+    
+    unregister(id) {
+        const plugin = this.plugins.get(id);
+        if (!plugin) return false;
+        
+        if (plugin.enabled) {
+            this.disable(id);
+        }
+        
+        this.plugins.delete(id);
+        return true;
+    },
+    
+    enable(id) {
+        const plugin = this.plugins.get(id);
+        if (!plugin || plugin.enabled) return false;
+        
+        try {
+            // Create sandbox
+            plugin.sandbox = this.createSandbox(plugin);
+            
+            // Initialize plugin
+            if (plugin.instance?.init) {
+                plugin.instance.init(this.api);
+            }
+            
+            plugin.enabled = true;
+            this.executeHook('pluginEnabled', { plugin: id });
+            
+            console.log(`Plugin enabled: ${plugin.name}`);
+            return true;
+            
+        } catch (e) {
+            console.error(`Failed to enable plugin ${id}:`, e);
+            return false;
+        }
+    },
+    
+    disable(id) {
+        const plugin = this.plugins.get(id);
+        if (!plugin || !plugin.enabled) return false;
+        
+        try {
+            // Cleanup
+            if (plugin.instance?.destroy) {
+                plugin.instance.destroy();
+            }
+            
+            // Unregister hooks
+            plugin.hooks.forEach(hook => {
+                this.unregisterHook(hook.name, hook.callback);
+            });
+            
+            plugin.enabled = false;
+            plugin.sandbox = null;
+            
+            this.executeHook('pluginDisabled', { plugin: id });
+            
+            console.log(`Plugin disabled: ${plugin.name}`);
+            return true;
+            
+        } catch (e) {
+            console.error(`Failed to disable plugin ${id}:`, e);
+            return false;
+        }
+    },
+    
+    createSandbox(plugin) {
+        // Create restricted execution environment
+        const allowedGlobals = ['console', 'Math', 'Date', 'JSON', 'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'];
+        
+        const sandbox = {};
+        allowedGlobals.forEach(g => {
+            sandbox[g] = window[g];
+        });
+        
+        // Add plugin API
+        sandbox.LF = this.api;
+        
+        return sandbox;
+    },
+    
+    // Hook system
+    
+    registerHook(name, callback, priority = 10) {
+        if (!this.hooks.has(name)) {
+            this.hooks.set(name, []);
+        }
+        
+        const hooks = this.hooks.get(name);
+        hooks.push({ callback, priority });
+        hooks.sort((a, b) => a.priority - b.priority);
+        
+        return () => this.unregisterHook(name, callback);
+    },
+    
+    unregisterHook(name, callback) {
+        const hooks = this.hooks.get(name);
+        if (!hooks) return;
+        
+        const index = hooks.findIndex(h => h.callback === callback);
+        if (index >= 0) {
+            hooks.splice(index, 1);
+        }
+    },
+    
+    executeHook(name, data = {}) {
+        const hooks = this.hooks.get(name) || [];
+        let result = data;
+        
+        for (const hook of hooks) {
             try {
-                const pluginFunc = new Function('app', 'return ' + code);
-                const plugin = pluginFunc(App);
-                this.register(plugin.id, plugin);
-            } catch (err) {
-                console.error('Failed to load stored plugin:', err);
+                const hookResult = hook.callback(result);
+                if (hookResult !== undefined) {
+                    result = hookResult;
+                }
+            } catch (e) {
+                console.error(`Hook error in ${name}:`, e);
+            }
+        }
+        
+        return result;
+    },
+    
+    // Built-in plugins
+    
+    loadBuiltInPlugins() {
+        // Lyrics translation plugin
+        this.register('lyrics-translation', {
+            name: 'Lyrics Translation',
+            version: '1.0.0',
+            description: 'Translate lyrics to other languages',
+            autoEnable: true,
+            init(api) {
+                api.addMenuItem('lyrics', {
+                    label: 'Translate',
+                    action: () => LFLyrics.toggleTranslation()
+                });
+            }
+        });
+        
+        // Discord RPC plugin
+        this.register('discord-rpc', {
+            name: 'Discord Rich Presence',
+            version: '1.0.0',
+            description: 'Show current song in Discord',
+            init(api) {
+                api.on('play', (song) => {
+                    // Update Discord RPC
+                    this.updatePresence(song);
+                });
+            },
+            updatePresence(song) {
+                // Implementation would use Discord SDK
+                console.log('Discord RPC:', song.title);
+            }
+        });
+        
+        // Last.fm scrobbler
+        this.register('lastfm', {
+            name: 'Last.fm Scrobbler',
+            version: '1.0.0',
+            description: 'Scrobble plays to Last.fm',
+            init(api) {
+                api.on('play', (song) => {
+                    this.scrobble(song);
+                });
+            },
+            scrobble(song) {
+                // Implementation would use Last.fm API
+                console.log('Scrobble:', song.title);
             }
         });
     },
-
-    emit(event, data) {
-        this.registry.forEach(plugin => {
-            if (plugin.onEvent) {
-                plugin.onEvent(event, data);
+    
+    loadUserPlugins() {
+        // Load from storage
+        const saved = LFUtils.storage.get('lf_plugins') || [];
+        
+        saved.forEach(pluginData => {
+            try {
+                // Validate and load plugin
+                const plugin = this.validatePlugin(pluginData);
+                if (plugin) {
+                    this.register(pluginData.id, plugin);
+                }
+            } catch (e) {
+                console.error('Failed to load user plugin:', e);
             }
         });
     },
-
-    updateUI() {
-        const container = document.getElementById('pluginsList');
+    
+    validatePlugin(data) {
+        // Security validation
+        if (!data.name || !data.version) return null;
+        
+        // Check for dangerous patterns
+        const dangerous = ['eval', 'Function', 'document.write', 'innerHTML'];
+        const code = data.code || '';
+        
+        for (const pattern of dangerous) {
+            if (code.includes(pattern)) {
+                console.warn(`Plugin ${data.name} contains dangerous pattern: ${pattern}`);
+                return null;
+            }
+        }
+        
+        return data;
+    },
+    
+    // UI integration
+    
+    addMenuItem(menu, item) {
+        const container = $(`#menu-${menu}`);
         if (!container) return;
         
-        if (this.registry.size === 0) {
-            container.innerHTML = '<p>No plugins installed</p>';
-            return;
-        }
+        const el = LFUtils.createElement('button', {
+            className: 'menu-item',
+            onclick: item.action
+        }, item.label);
         
-        container.innerHTML = Array.from(this.registry.values()).map(plugin => `
-            <div class="plugin-item">
-                <div>
-                    <strong>${plugin.name}</strong>
-                    <span>v${plugin.version || '1.0'}</span>
-                </div>
-                <button onclick="app.plugins.unregister('${plugin.id}')">Remove</button>
-            </div>
-        `).join('');
+        container.appendChild(el);
+    },
+    
+    addSettingsPanel(panel) {
+        const container = $('#plugin-settings');
+        if (!container) return;
+        
+        const el = LFUtils.createElement('div', {
+            className: 'settings-panel'
+        },
+            LFUtils.createElement('h3', {}, panel.title),
+            panel.content
+        );
+        
+        container.appendChild(el);
+    },
+    
+    addVisualizer(renderer) {
+        LFVisualizer.addCustomRenderer(renderer);
+    },
+    
+    addAudioNode(node) {
+        // Add to audio processing chain
+        if (LFPlayer.gainNode) {
+            LFPlayer.gainNode.connect(node);
+        }
+    },
+    
+    // Data persistence
+    
+    getPluginData(key) {
+        const data = LFUtils.storage.get('lf_plugin_data') || {};
+        return data[key];
+    },
+    
+    setPluginData(key, value) {
+        const data = LFUtils.storage.get('lf_plugin_data') || {};
+        data[key] = value;
+        LFUtils.storage.set('lf_plugin_data', data);
+    },
+    
+    // Getters
+    
+    getPlugin(id) {
+        return this.plugins.get(id);
+    },
+    
+    getAllPlugins() {
+        return Array.from(this.plugins.values());
+    },
+    
+    getEnabledPlugins() {
+        return this.getAllPlugins().filter(p => p.enabled);
     }
 };
