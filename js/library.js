@@ -45,6 +45,54 @@ App.library = {
         // In real implementation, this would scan the songs/ folder
         // For now, we'll check for new song files dynamically
         
+        async function loadSongs() {
+    try {
+        // Cek localStorage dulu untuk data developer
+        const storedSongs = localStorage.getItem('lyricflow_songs');
+        if (storedSongs) {
+            songs = JSON.parse(storedSongs);
+        } else {
+            // Load default songs dari template HTML
+            songs = getDefaultSongs();
+        }
+
+        renderSongList();
+
+        // Jika ada lagu yang sedang diputar, update UI
+        if (currentSong) {
+            const updatedSong = songs.find(s => s.id === currentSong.id);
+            if (updatedSong) {
+                currentSong = updatedSong;
+                updateLyricsData();
+            }
+        }
+    } catch (error) {
+        console.error('Error loading songs:', error);
+    }
+}
+
+async function loadSongs() {
+    try {
+        const songFiles = [
+            'songs/song1.html',
+            'songs/song2.html'
+        ];
+
+        songs = [];
+
+        for (const file of songFiles) {
+            const song = await loadSongFromHTML(file);
+            if (song) songs.push(song);
+        }
+
+        renderSongList();
+
+    } catch (err) {
+        console.error('Gagal load lagu:', err);
+        songs = [];
+        renderSongList();
+    }
+};
 
         // Merge with existing, avoiding duplicates
         const existingIds = new Set(App.state.songs.map(s => s.id));
