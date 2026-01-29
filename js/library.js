@@ -1,281 +1,466 @@
 /**
- * LIBRARY MODULE v1.2
- * Song Library Management with Auto-Scan
+ * LYRICFLOW v1.3 - LIBRARY MODULE
+ * Local song management and metadata handling
  */
 
-App.library = {
-    viewMode: 'grid', // grid or list
-    sortBy: 'title', // title, artist, date, duration
-    searchQuery: '',
-
+const LFLibrary = {
+    songs: [],
+    artists: new Map(),
+    albums: new Map(),
+    genres: new Set(),
+    
+    // Metadata cache
+    metadataCache: new Map(),
+    
     init() {
         this.setupEventListeners();
+        this.setupDropZone();
+        console.log('Library module initialized');
     },
-
+    
     setupEventListeners() {
-        // Sort toggle
-        document.querySelector('.btn-sort')?.addEventListener('click', () => {
-            const sorts = ['title', 'artist', 'date', 'duration'];
-            const currentIndex = sorts.indexOf(this.sortBy);
-            this.sortBy = sorts[(currentIndex + 1) % sorts.length];
-            this.render();
-            App.toast.show(`Sorted by: ${this.sortBy}`, 'info');
+        // Upload button
+        $('#btn-hero-upload')?.addEventListener('click', () => {
+            $('#file-upload')?.click();
         });
-
-        // View toggle
-        document.querySelector('.btn-view')?.addEventListener('click', () => {
-            this.viewMode = this.viewMode === 'grid' ? 'list' : 'grid';
-            this.render();
+        
+        $('#file-upload')?.addEventListener('change', (e) => {
+            this.handleFileSelect(e.target.files);
+        });
+        
+        // Import menu
+        $('#btn-import')?.addEventListener('click', () => {
+            this.showImportModal();
         });
     },
-
-    async load() {
-        // Load from localStorage first
-        const stored = localStorage.getItem('lf_songs');
-        if (stored) {
-            App.state.songs = JSON.parse(stored);
-            this.render();
-        }
-
-        // Then scan for new songs
-        await this.scanFolder();
-    },
-
-    async scanFolder() {
-        // In real implementation, this would scan the songs/ folder
-        // For now, we'll check for new song files dynamically
+    
+    setupDropZone() {
+        const dropZones = $$('.upload-zone, #page-home');
         
-        async function loadSongs() {
-    try {
-        // Cek localStorage dulu untuk data developer
-        const storedSongs = localStorage.getItem('lyricflow_songs');
-        if (storedSongs) {
-            songs = JSON.parse(storedSongs);
-        } else {
-            // Load default songs dari template HTML
-            songs = getDefaultSongs();
-        }
-
-        renderSongList();
-
-        // Jika ada lagu yang sedang diputar, update UI
-        if (currentSong) {
-            const updatedSong = songs.find(s => s.id === currentSong.id);
-            if (updatedSong) {
-                currentSong = updatedSong;
-                updateLyricsData();
-            }
-        }
-    } catch (error) {
-        console.error('Error loading songs:', error);
-    }
-}
-
-async function loadSongs() {
-    try {
-        const songFiles = [
-            'songs/song1.html',
-            'songs/song2.html'
-        ];
-
-        songs = [];
-
-        for (const file of songFiles) {
-            const song = await loadSongFromHTML(file);
-            if (song) songs.push(song);
-        }
-
-        renderSongList();
-
-    } catch (err) {
-        console.error('Gagal load lagu:', err);
-        songs = [];
-        renderSongList();
-    }
-};
-
-        // Merge with existing, avoiding duplicates
-        const existingIds = new Set(App.state.songs.map(s => s.id));
-        const newSongs = defaultSongs.filter(s => !existingIds.has(s.id));
-        
-        if (newSongs.length > 0) {
-            App.state.songs = [...App.state.songs, ...newSongs];
-            this.save();
-            this.render();
-            App.toast.show(`Found ${newSongs.length} new songs!`, 'success');
-        }
-
-        // Update system info
-        document.getElementById('sysSongCount').textContent = App.state.songs.length;
+        dropZones.forEach(zone => {
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                zone.classList.add('dragover');
+            });
+            
+            zone.addEventListener('dragleave', () => {
+                zone.classList.remove('dragover');
+            });
+            
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('dragover');
+                this.handleFileSelect(e.dataTransfer.files);
+            });
+        });
     },
-
-    render() {
-        const container = document.getElementById('songGrid');
-        let songs = this.getFilteredSongs();
-
-        // Sort
-        songs = this.sortSongs(songs);
-
-        if (songs.length === 0) {
-            container.innerHTML = '<div class="empty-state">No songs found</div>';
+    
+    // Handle file selection
+    async handleFileSelect(files) {
+        const audioFiles = Array.from(files).filter(f => 
+            f.type.startsWith('audio/') || f.name.endsWith('.mp3') || f.name.endsWith('.flac')
+        );
+        
+        const lrcFiles = Array.from(files).filter(f => 
+            f.name.endsWith('.lrc') || f.name.endsWith('.txt')
+        );
+        
+        if (audioFiles.length === 0 && lrcFiles.length === 0) {
+            LyricFlow.showToast('No valid files selected', 'warning');
             return;
         }
-
-        if (this.viewMode === 'grid') {
-            container.className = 'song-grid';
-            container.innerHTML = songs.map(song => this.createGridCard(song)).join('');
-        } else {
-            container.className = 'song-list-view';
-            container.innerHTML = songs.map(song => this.createListItem(song)).join('');
+        
+        LyricFlow.showToast(`Processing ${audioFiles.length} files...`, 'info');
+        
+        // Process audio files
+        for (const file of audioFiles) {
+            await this.processAudioFile(file);
+        }
+        
+        // Process lyrics files
+        for (const file of lrcFiles) {
+            await this.processLyricsFile(file);
+        }
+        
+        this.renderSongs();
+        LyricFlow.showToast('Files added to library!', 'success');
+    },
+    
+    // Process audio file
+    async processAudioFile(file) {
+        try {
+            // Generate ID
+            const id = LFUtils.generateUUID();
+            
+            // Extract metadata
+            const metadata = await this.extractMetadata(file);
+            
+            // Generate cover if not present
+            let cover = metadata.cover;
+            if (!cover) {
+                cover = await this.generateCoverFromFile(file);
+            }
+            
+            // Create song object
+            const song = {
+                id,
+                title: metadata.title || this.cleanFileName(file.name),
+                artist: metadata.artist || 'Unknown Artist',
+                album: metadata.album || 'Unknown Album',
+                year: metadata.year || '',
+                genre: metadata.genre || '',
+                duration: metadata.duration || 0,
+                track: metadata.track || 0,
+                file: URL.createObjectURL(file),
+                cover,
+                fileName: file.name,
+                fileSize: file.size,
+                addedAt: Date.now(),
+                playCount: 0
+            };
+            
+            // Save to IndexedDB
+            await this.saveSongFile(id, file);
+            await LFUtils.db.put('songs', song);
+            
+            // Add to library
+            this.songs.push(song);
+            this.indexSong(song);
+            
+        } catch (e) {
+            console.error('Failed to process file:', file.name, e);
         }
     },
-
-    createGridCard(song) {
-        const isActive = App.state.currentSong?.id === song.id;
-        const isFav = App.state.favorites.has(song.id);
+    
+    // Extract metadata from audio file
+    async extractMetadata(file) {
+        return new Promise((resolve) => {
+            const metadata = {
+                title: '',
+                artist: '',
+                album: '',
+                year: '',
+                genre: '',
+                track: 0,
+                duration: 0,
+                cover: null
+            };
+            
+            // Use jsmediatags if available
+            if (window.jsmediatags) {
+                jsmediatags.read(file, {
+                    onSuccess: (tag) => {
+                        const tags = tag.tags;
+                        metadata.title = tags.title;
+                        metadata.artist = tags.artist;
+                        metadata.album = tags.album;
+                        metadata.year = tags.year;
+                        metadata.genre = tags.genre;
+                        metadata.track = tags.track;
+                        
+                        if (tags.picture) {
+                            const { data, format } = tags.picture;
+                            const byteArray = new Uint8Array(data);
+                            const blob = new Blob([byteArray], { type: format });
+                            metadata.cover = URL.createObjectURL(blob);
+                        }
+                        
+                        // Get duration
+                        this.getAudioDuration(file).then(duration => {
+                            metadata.duration = duration;
+                            resolve(metadata);
+                        });
+                    },
+                    onError: () => {
+                        // Fallback to basic info
+                        this.getAudioDuration(file).then(duration => {
+                            metadata.duration = duration;
+                            resolve(metadata);
+                        });
+                    }
+                });
+            } else {
+                // No metadata library, just get duration
+                this.getAudioDuration(file).then(duration => {
+                    metadata.duration = duration;
+                    resolve(metadata);
+                });
+            }
+        });
+    },
+    
+    // Get audio duration
+    getAudioDuration(file) {
+        return new Promise((resolve) => {
+            const audio = new Audio();
+            audio.preload = 'metadata';
+            
+            audio.onloadedmetadata = () => {
+                URL.revokeObjectURL(audio.src);
+                resolve(audio.duration);
+            };
+            
+            audio.onerror = () => {
+                resolve(0);
+            };
+            
+            audio.src = URL.createObjectURL(file);
+        });
+    },
+    
+    // Generate cover from file (placeholder or color)
+    async generateCoverFromFile(file) {
+        // Generate a color based on filename
+        const hash = file.name.split('').reduce((a, b) => {
+            a = ((a << 5) - a) + b.charCodeAt(0);
+            return a & a;
+        }, 0);
+        
+        const hue = Math.abs(hash % 360);
+        const canvas = document.createElement('canvas');
+        canvas.width = 400;
+        canvas.height = 400;
+        const ctx = canvas.getContext('2d');
+        
+        // Gradient background
+        const gradient = ctx.createLinearGradient(0, 0, 400, 400);
+        gradient.addColorStop(0, `hsl(${hue}, 70%, 50%)`);
+        gradient.addColorStop(1, `hsl(${(hue + 40) % 360}, 70%, 30%)`);
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 400, 400);
+        
+        // Add pattern
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+        for (let i = 0; i < 5; i++) {
+            ctx.beginPath();
+            ctx.arc(200, 200, 50 + i * 30, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Add initial
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 120px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const initial = (file.name[0] || '?').toUpperCase();
+        ctx.fillText(initial, 200, 200);
+        
+        return canvas.toDataURL('image/jpeg', 0.8);
+    },
+    
+    // Save song file to IndexedDB
+    async saveSongFile(id, file) {
+        const arrayBuffer = await LFUtils.readFileAsArrayBuffer(file);
+        await LFUtils.db.put('offline', {
+            id: `audio_${id}`,
+            data: arrayBuffer,
+            type: file.type
+        });
+    },
+    
+    // Process lyrics file
+    async processLyricsFile(file) {
+        try {
+            const content = await LFUtils.readFileAsText(file);
+            
+            // Try to match with existing song
+            const fileName = file.name.replace('.lrc', '').replace('.txt', '');
+            const matchingSong = this.songs.find(s => 
+                fileName.includes(s.title) || 
+                s.fileName.includes(fileName)
+            );
+            
+            if (matchingSong) {
+                await LFUtils.db.put('lyrics', {
+                    songId: matchingSong.id,
+                    content,
+                    source: 'file'
+                });
+                LyricFlow.showToast(`Lyrics matched: ${matchingSong.title}`, 'success');
+            } else {
+                // Store for manual matching
+                this.pendingLyrics = { fileName, content };
+                LyricFlow.showToast('Lyrics file saved for manual matching', 'info');
+            }
+        } catch (e) {
+            console.error('Failed to process lyrics file:', e);
+        }
+    },
+    
+    // Index song for search/browse
+    indexSong(song) {
+        // Artist index
+        if (!this.artists.has(song.artist)) {
+            this.artists.set(song.artist, []);
+        }
+        this.artists.get(song.artist).push(song);
+        
+        // Album index
+        const albumKey = `${song.artist}|${song.album}`;
+        if (!this.albums.has(albumKey)) {
+            this.albums.set(albumKey, {
+                artist: song.artist,
+                album: song.album,
+                year: song.year,
+                songs: []
+            });
+        }
+        this.albums.get(albumKey).songs.push(song);
+        
+        // Genre index
+        if (song.genre) {
+            this.genres.add(song.genre);
+        }
+    },
+    
+    // Clean file name for title
+    cleanFileName(name) {
+        return name
+            .replace(/\.[^/.]+$/, '') // Remove extension
+            .replace(/[_-]/g, ' ') // Replace underscores/dashes
+            .replace(/\s+/g, ' ') // Normalize spaces
+            .trim();
+    },
+    
+    // Set songs (from DB)
+    setSongs(songs) {
+        this.songs = songs || [];
+        this.rebuildIndexes();
+        this.renderSongs();
+    },
+    
+    rebuildIndexes() {
+        this.artists.clear();
+        this.albums.clear();
+        this.genres.clear();
+        
+        this.songs.forEach(song => this.indexSong(song));
+    },
+    
+    // Getters
+    getSong(id) {
+        return this.songs.find(s => s.id === id);
+    },
+    
+    getAllSongs() {
+        return this.songs;
+    },
+    
+    getSongsByArtist(artist) {
+        return this.artists.get(artist) || [];
+    },
+    
+    getAlbum(artist, album) {
+        return this.albums.get(`${artist}|${album}`);
+    },
+    
+    getAllAlbums() {
+        return Array.from(this.albums.values());
+    },
+    
+    getAllArtists() {
+        return Array.from(this.artists.keys());
+    },
+    
+    // Search
+    search(query) {
+        const lowerQuery = query.toLowerCase();
+        
+        return this.songs.filter(song => 
+            song.title.toLowerCase().includes(lowerQuery) ||
+            song.artist.toLowerCase().includes(lowerQuery) ||
+            song.album.toLowerCase().includes(lowerQuery)
+        );
+    },
+    
+    // Render methods
+    renderSongs(containerId = 'trending-grid', songs = this.songs) {
+        const container = $(`#${containerId}`);
+        if (!container) return;
+        
+        if (songs.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <p>No songs in library</p>
+                    <button class="btn-primary" onclick="$('#file-upload').click()">Add Songs</button>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = songs.map(song => this.createSongCard(song)).join('');
+    },
+    
+    createSongCard(song) {
+        const isPlaying = LyricFlow.state.currentSong?.id === song.id;
+        const isFavorite = LyricFlow.isFavorite(song.id);
         
         return `
-            <div class="song-card ${isActive ? 'active' : ''}" data-id="${song.id}">
-                <div class="song-cover-wrapper" onclick="app.player.loadById('${song.id}')">
-                    <img src="${song.cover}" alt="${song.title}" class="song-cover" loading="lazy">
-                    <div class="song-overlay">
-                        <button class="btn-play-overlay">▶</button>
+            <div class="song-card ${isPlaying ? 'playing' : ''}" data-id="${song.id}">
+                <div class="song-cover">
+                    <img src="${song.cover || 'assets/images/default-cover.png'}" alt="${LFUtils.sanitize(song.title)}" loading="lazy">
+                    <div class="song-play" style="opacity: ${isPlaying ? '1' : ''}">
+                        <button class="song-play-btn" onclick="event.stopPropagation(); LyricFlow.playSong(LFLibrary.getSong('${song.id}'))">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                ${isPlaying && LyricFlow.state.isPlaying 
+                                    ? '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>' 
+                                    : '<polygon points="5 3 19 12 5 21 5 3"/>'}
+                            </svg>
+                        </button>
                     </div>
-                    ${App.state.editMode ? `<button class="btn-delete-song" onclick="event.stopPropagation(); app.dev.deleteSong('${song.id}')">×</button>` : ''}
                 </div>
                 <div class="song-info">
-                    <div class="song-title">${this.escapeHtml(song.title)}</div>
-                    <div class="song-artist">${this.escapeHtml(song.artist)}</div>
+                    <h4>${LFUtils.sanitize(song.title)}</h4>
+                    <p>${LFUtils.sanitize(song.artist)}</p>
                 </div>
             </div>
         `;
     },
-
-    createListItem(song) {
-        const isActive = App.state.currentSong?.id === song.id;
-        const duration = this.formatDuration(song.duration);
+    
+    // Delete song
+    async deleteSong(id) {
+        if (!confirm('Delete this song from library?')) return;
         
-        return `
-            <div class="song-list-item ${isActive ? 'active' : ''}" onclick="app.player.loadById('${song.id}')">
-                <img src="${song.cover}" alt="" class="list-cover">
-                <div class="list-info">
-                    <div class="list-title">${this.escapeHtml(song.title)}</div>
-                    <div class="list-artist">${this.escapeHtml(song.artist)} • ${this.escapeHtml(song.album || 'Unknown Album')}</div>
-                </div>
-                <div class="list-duration">${duration}</div>
-                <button class="list-fav ${App.state.favorites.has(song.id) ? 'active' : ''}" onclick="event.stopPropagation(); app.library.toggleFav('${song.id}')">
-                    ${App.state.favorites.has(song.id) ? '❤️' : '🤍'}
-                </button>
-            </div>
-        `;
-    },
-
-    getFilteredSongs() {
-        let songs = [...App.state.songs];
+        // Remove from arrays
+        this.songs = this.songs.filter(s => s.id !== id);
         
-        if (this.searchQuery) {
-            const q = this.searchQuery.toLowerCase();
-            songs = songs.filter(s => 
-                s.title.toLowerCase().includes(q) ||
-                s.artist.toLowerCase().includes(q) ||
-                (s.album && s.album.toLowerCase().includes(q))
-            );
-        }
+        // Remove from DB
+        await LFUtils.db.delete('songs', id);
+        await LFUtils.db.delete('offline', `audio_${id}`);
+        await LFUtils.db.delete('lyrics', id);
         
-        return songs;
-    },
-
-    sortSongs(songs) {
-        switch(this.sortBy) {
-            case 'title':
-                return songs.sort((a, b) => a.title.localeCompare(b.title));
-            case 'artist':
-                return songs.sort((a, b) => a.artist.localeCompare(b.artist));
-            case 'date':
-                return songs.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
-            case 'duration':
-                return songs.sort((a, b) => (a.duration || 0) - (b.duration || 0));
-            default:
-                return songs;
-        }
-    },
-
-    search(query) {
-        this.searchQuery = query;
-        this.render();
-    },
-
-    showFavorites() {
-        const favs = App.state.songs.filter(s => App.state.favorites.has(s.id));
-        const container = document.getElementById('songGrid');
+        // Rebuild indexes
+        this.rebuildIndexes();
         
-        if (favs.length === 0) {
-            container.innerHTML = '<div class="empty-state">No favorites yet. Click 🤍 on any song!</div>';
-            return;
-        }
+        // Update UI
+        this.renderSongs();
+        LyricFlow.showToast('Song deleted', 'info');
+    },
+    
+    // Update song metadata
+    async updateSong(id, updates) {
+        const song = this.getSong(id);
+        if (!song) return;
         
-        container.className = 'song-grid';
-        container.innerHTML = favs.map(song => this.createGridCard(song)).join('');
-    },
-
-    showRecent() {
-        const recentIds = App.state.recent.map(r => r.id);
-        const recent = recentIds.map(id => App.state.songs.find(s => s.id === id)).filter(Boolean);
+        Object.assign(song, updates, { updatedAt: Date.now() });
         
-        const container = document.getElementById('songGrid');
-        
-        if (recent.length === 0) {
-            container.innerHTML = '<div class="empty-state">No recent plays</div>';
-            return;
-        }
-        
-        container.className = 'song-grid';
-        container.innerHTML = recent.map(song => this.createGridCard(song)).join('');
+        await LFUtils.db.put('songs', song);
+        this.rebuildIndexes();
+        this.renderSongs();
     },
-
-    toggleFav(id) {
-        if (App.state.favorites.has(id)) {
-            App.state.favorites.delete(id);
-        } else {
-            App.state.favorites.add(id);
-        }
-        App.saveData();
-        this.render();
+    
+    // Get recent songs
+    getRecentSongs(limit = 10) {
+        return [...this.songs]
+            .sort((a, b) => (b.lastPlayed || 0) - (a.lastPlayed || 0))
+            .slice(0, limit);
     },
-
-    toggleSort() {
-        const sorts = ['title', 'artist', 'date', 'duration'];
-        const currentIndex = sorts.indexOf(this.sortBy);
-        this.sortBy = sorts[(currentIndex + 1) % sorts.length];
-        this.render();
-        return this.sortBy;
-    },
-
-    toggleView() {
-        this.viewMode = this.viewMode === 'grid' ? 'list' : 'grid';
-        this.render();
-        return this.viewMode;
-    },
-
-    checkForNewSongs() {
-        this.scanFolder();
-    },
-
-    save() {
-        localStorage.setItem('lf_songs', JSON.stringify(App.state.songs));
-        document.getElementById('sysSongCount').textContent = App.state.songs.length;
-    },
-
-    formatDuration(seconds) {
-        if (!seconds) return '--:--';
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
-    },
-
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+    
+    // Get most played
+    getMostPlayed(limit = 10) {
+        return [...this.songs]
+            .sort((a, b) => (b.playCount || 0) - (a.playCount || 0))
+            .slice(0, limit);
     }
 };
