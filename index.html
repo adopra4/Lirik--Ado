@@ -1,853 +1,619 @@
 <!DOCTYPE html>
-<html lang="id" data-theme="dark">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="description" content="LyricFlow v1.3 - Advanced Music Player with Synced Lyrics, P2P Sync, AI Features, and Offline Mode">
-    <meta name="theme-color" content="#0f0f0f">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
-    <title>LyricFlow v1.3 - Advanced Music Experience</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0a0a0f">
+    <title>LyricFlow v1.3 - Music & Lyrics Platform</title>
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
-    
-    <!-- Icons -->
-    <link rel="apple-touch-icon" href="assets/icons/icon-192x192.png">
-    <link rel="icon" type="image/png" href="assets/icons/favicon.png">
-    
-    <!-- Preload Critical Resources -->
-    <link rel="preload" href="css/core.css" as="style">
-    <link rel="preload" href="css/components.css" as="style">
-    <link rel="preload" href="js/core.js" as="script">
-    
-    <!-- Stylesheets -->
-    <link rel="stylesheet" href="css/core.css">
-    <link rel="stylesheet" href="css/components.css">
-    <link rel="stylesheet" href="css/animations.css">
-    <link rel="stylesheet" href="css/responsive.css">
-    <link rel="stylesheet" href="css/themes/dark.css" id="theme-stylesheet">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     
-    <!-- Web App Capabilities -->
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="LyricFlow">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Security -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; media-src 'self' blob:; connect-src 'self' wss: https:; img-src 'self' data: blob: https:;">
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/core.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <link rel="stylesheet" href="css/themes/dark.css" id="theme-stylesheet">
     
-    <style>
-        /* Critical CSS for First Paint */
-        :root {
-            --primary: #ff006e;
-            --secondary: #8338ec;
-            --accent: #3a86ff;
-            --bg-primary: #0a0a0a;
-            --bg-secondary: #141414;
-            --text-primary: #ffffff;
-            --text-secondary: #a0a0a0;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            overflow: hidden;
-            height: 100vh;
-            width: 100vw;
-        }
-        
-        #app-loader {
-            position: fixed;
-            inset: 0;
-            background: var(--bg-primary);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 99999;
-            transition: opacity 0.5s ease, visibility 0.5s ease;
-        }
-        
-        #app-loader.hidden {
-            opacity: 0;
-            visibility: hidden;
-        }
-        
-        .loader-logo {
-            width: 120px;
-            height: 120px;
-            position: relative;
-            margin-bottom: 2rem;
-        }
-        
-        .loader-ring {
-            position: absolute;
-            inset: 0;
-            border: 3px solid transparent;
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        
-        .loader-ring:nth-child(2) {
-            inset: 10px;
-            border-top-color: var(--secondary);
-            animation-duration: 1.5s;
-            animation-direction: reverse;
-        }
-        
-        .loader-ring:nth-child(3) {
-            inset: 20px;
-            border-top-color: var(--accent);
-            animation-duration: 2s;
-        }
-        
-        .loader-text {
-            font-size: 1.5rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--primary), var(--secondary), var(--accent));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: pulse 2s ease-in-out infinite;
-        }
-        
-        .loader-progress {
-            width: 200px;
-            height: 4px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 2px;
-            margin-top: 1rem;
-            overflow: hidden;
-        }
-        
-        .loader-bar {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            border-radius: 2px;
-            transition: width 0.3s ease;
-            animation: loading 2s ease-in-out infinite;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        
-        @keyframes loading {
-            0% { width: 0%; margin-left: 0%; }
-            50% { width: 100%; margin-left: 0%; }
-            100% { width: 0%; margin-left: 100%; }
-        }
-        
-        /* App Container */
-        #app {
-            width: 100%;
-            height: 100%;
-            display: grid;
-            grid-template-areas: 
-                "sidebar header header"
-                "sidebar main main"
-                "player player player";
-            grid-template-columns: 280px 1fr;
-            grid-template-rows: 70px 1fr 90px;
-            opacity: 0;
-            transition: opacity 0.5s ease;
-        }
-        
-        #app.loaded {
-            opacity: 1;
-        }
-        
-        /* Fallback for no-js */
-        .no-js #app-loader {
-            display: none;
-        }
-        
-        .no-js #app {
-            opacity: 1;
-        }
-    </style>
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
 </head>
-<body>
-    <!-- App Loader -->
-    <div id="app-loader">
-        <div class="loader-logo">
-            <div class="loader-ring"></div>
-            <div class="loader-ring"></div>
-            <div class="loader-ring"></div>
-            <svg viewBox="0 0 100 100" style="position:absolute;inset:25px;width:70px;height:70px;">
-                <defs>
-                    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" style="stop-color:#ff006e"/>
-                        <stop offset="50%" style="stop-color:#8338ec"/>
-                        <stop offset="100%" style="stop-color:#3a86ff"/>
-                    </linearGradient>
-                </defs>
-                <path d="M50 20 L50 80 M30 40 L50 20 L70 40" stroke="url(#logoGrad)" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="50" cy="85" r="5" fill="url(#logoGrad)"/>
-            </svg>
+<body class="dark-theme">
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="logo-animation">
+                <div class="music-wave">
+                    <span></span><span></span><span></span><span></span><span></span>
+                </div>
+                <h1 class="logo-text">Lyric<span class="highlight">Flow</span></h1>
+            </div>
+            <div class="loading-bar">
+                <div class="loading-progress"></div>
+            </div>
+            <p class="loading-status">Initializing audio engine...</p>
+            <p class="loading-version">v1.3.0</p>
         </div>
-        <div class="loader-text">LyricFlow v1.3</div>
-        <div class="loader-progress">
-            <div class="loader-bar"></div>
-        </div>
-        <div id="loader-status" style="margin-top:1rem;color:var(--text-secondary);font-size:0.875rem;">Initializing...</div>
     </div>
 
-    <!-- Main App -->
-    <div id="app" role="application" aria-label="LyricFlow Music Player">
-        
-        <!-- Sidebar Navigation -->
-        <aside class="sidebar" role="navigation" aria-label="Main Navigation">
+    <!-- Main App Container -->
+    <div id="app" class="app-container hidden">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
-                    <svg viewBox="0 0 40 40" class="logo-icon">
-                        <defs>
-                            <linearGradient id="sidebarLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" style="stop-color:#ff006e"/>
-                                <stop offset="100%" style="stop-color:#3a86ff"/>
-                            </linearGradient>
-                        </defs>
-                        <path d="M20 8 L20 32 M10 18 L20 8 L30 18" stroke="url(#sidebarLogoGrad)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                        <circle cx="20" cy="35" r="2" fill="url(#sidebarLogoGrad)"/>
-                    </svg>
-                    <span class="logo-text">LyricFlow</span>
-                    <span class="version-badge">v1.3</span>
+                    <i class="fas fa-wave-square"></i>
+                    <span>LyricFlow</span>
                 </div>
-                <button class="sidebar-toggle" aria-label="Toggle Sidebar" id="sidebar-toggle">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 12h18M3 6h18M3 18h18"/>
-                    </svg>
+                <button class="sidebar-toggle" id="sidebar-toggle">
+                    <i class="fas fa-bars"></i>
                 </button>
             </div>
-
-            <nav class="nav-sections">
+            
+            <nav class="sidebar-nav">
                 <div class="nav-section">
-                    <h3 class="nav-title">Discover</h3>
-                    <ul class="nav-list">
-                        <li><a href="#home" class="nav-link active" data-page="home">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                            <span>Home</span>
-                        </a></li>
-                        <li><a href="#browse" class="nav-link" data-page="browse">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                            <span>Browse</span>
-                        </a></li>
-                        <li><a href="#radio" class="nav-link" data-page="radio">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.1 19.1 19"/></svg>
-                            <span>Radio</span>
-                        </a></li>
+                    <h3>Menu</h3>
+                    <ul>
+                        <li class="active">
+                            <a href="#home" data-page="home">
+                                <i class="fas fa-home"></i>
+                                <span>Home</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#search" data-page="search">
+                                <i class="fas fa-search"></i>
+                                <span>Search</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#library" data-page="library">
+                                <i class="fas fa-music"></i>
+                                <span>Library</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#playlists" data-page="playlists">
+                                <i class="fas fa-list"></i>
+                                <span>Playlists</span>
+                            </a>
+                        </li>
                     </ul>
                 </div>
-
+                
                 <div class="nav-section">
-                    <h3 class="nav-title">Library</h3>
-                    <ul class="nav-list">
-                        <li><a href="#recent" class="nav-link" data-page="recent">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                            <span>Recently Played</span>
-                        </a></li>
-                        <li><a href="#favorites" class="nav-link" data-page="favorites">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-                            <span>Favorites</span>
-                            <span class="badge" id="fav-count">0</span>
-                        </a></li>
-                        <li><a href="#local" class="nav-link" data-page="local">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                            <span>Local Files</span>
-                        </a></li>
-                        <li><a href="#playlists" class="nav-link" data-page="playlists">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-                            <span>Playlists</span>
-                        </a></li>
+                    <h3>Your Collection</h3>
+                    <ul>
+                        <li>
+                            <a href="#favorites" data-page="favorites">
+                                <i class="fas fa-heart"></i>
+                                <span>Favorites</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#recent" data-page="recent">
+                                <i class="fas fa-clock"></i>
+                                <span>Recently Played</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#offline" data-page="offline">
+                                <i class="fas fa-download"></i>
+                                <span>Offline</span>
+                            </a>
+                        </li>
                     </ul>
                 </div>
-
-                <div class="nav-section">
-                    <h3 class="nav-title">AI & Sync</h3>
-                    <ul class="nav-list">
-                        <li><a href="#ai-generator" class="nav-link" data-page="ai-generator">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                            <span>AI Lyrics Generator</span>
-                            <span class="badge new">NEW</span>
-                        </a></li>
-                        <li><a href="#p2p-sync" class="nav-link" data-page="p2p-sync">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-                            <span>P2P Sync</span>
-                            <span class="badge beta">BETA</span>
-                        </a></li>
-                        <li><a href="#offline" class="nav-link" data-page="offline">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
-                            <span>Offline Mode</span>
-                        </a></li>
-                    </ul>
-                </div>
-
-                <div class="nav-section" id="dev-section" style="display:none;">
-                    <h3 class="nav-title">Developer</h3>
-                    <ul class="nav-list">
-                        <li><a href="#dev-panel" class="nav-link" data-page="dev-panel">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-                            <span>Dev Panel</span>
-                        </a></li>
-                        <li><a href="#analytics" class="nav-link" data-page="analytics">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg>
-                            <span>Analytics</span>
-                        </a></li>
+                
+                <div class="nav-section" id="dev-section" style="display: none;">
+                    <h3>Developer</h3>
+                    <ul>
+                        <li>
+                            <a href="#upload" data-page="upload">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span>Upload Music</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#analytics" data-page="analytics">
+                                <i class="fas fa-chart-line"></i>
+                                <span>Analytics</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#settings" data-page="settings">
+                                <i class="fas fa-cog"></i>
+                                <span>Settings</span>
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </nav>
-
+            
             <div class="sidebar-footer">
-                <div class="storage-info">
-                    <div class="storage-bar">
-                        <div class="storage-used" style="width:0%"></div>
+                <div class="user-profile" id="user-profile">
+                    <div class="avatar">
+                        <i class="fas fa-user"></i>
                     </div>
-                    <span class="storage-text">0 MB / 0 MB used</span>
+                    <div class="user-info">
+                        <span class="username">Guest User</span>
+                        <span class="user-role">Free Plan</span>
+                    </div>
+                    <button class="user-menu-btn" id="user-menu-btn">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
                 </div>
-                <button class="btn-upgrade" id="btn-upgrade">Upgrade to Pro</button>
             </div>
         </aside>
 
-        <!-- Header -->
-        <header class="main-header" role="banner">
-            <div class="header-search">
-                <div class="search-box">
-                    <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                    <input type="text" placeholder="Search songs, artists, albums, lyrics..." id="global-search" autocomplete="off">
-                    <button class="voice-search" id="voice-search-btn" aria-label="Voice Search">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-                    </button>
-                    <div class="search-suggestions" id="search-suggestions"></div>
-                </div>
-            </div>
-
-            <div class="header-actions">
-                <button class="action-btn" id="btn-p2p-status" aria-label="P2P Status">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                    <span class="status-indicator offline" id="p2p-indicator"></span>
-                </button>
-                
-                <button class="action-btn" id="btn-notifications" aria-label="Notifications">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-                    <span class="badge" id="notif-count">3</span>
-                </button>
-
-                <div class="theme-switcher">
-                    <button class="action-btn" id="btn-theme" aria-label="Change Theme">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="theme-icon-dark"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="theme-icon-light" style="display:none;"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-                    </button>
-                    <div class="theme-dropdown" id="theme-dropdown">
-                        <button data-theme="dark" class="active">Dark</button>
-                        <button data-theme="light">Light</button>
-                        <button data-theme="neon">Neon</button>
-                        <button data-theme="minimal">Minimal</button>
-                        <button data-theme="ocean">Ocean</button>
-                    </div>
-                </div>
-
-                <div class="user-menu">
-                    <button class="user-btn" id="user-menu-btn">
-                        <img src="assets/images/default-avatar.png" alt="User" class="user-avatar" id="user-avatar">
-                        <span class="user-name" id="user-name">Guest</span>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-                    </button>
-                    <div class="user-dropdown" id="user-dropdown">
-                        <div class="dropdown-header">
-                            <img src="assets/images/default-avatar.png" alt="User" class="dropdown-avatar">
-                            <div class="dropdown-info">
-                                <span class="dropdown-name" id="dropdown-name">Guest User</span>
-                                <span class="dropdown-email" id="dropdown-email">guest@lyricflow.app</span>
-                            </div>
-                        </div>
-                        <div class="dropdown-divider"></div>
-                        <a href="#profile" class="dropdown-item">Profile</a>
-                        <a href="#settings" class="dropdown-item">Settings</a>
-                        <a href="#dev-login" class="dropdown-item" id="dev-login-item">Developer Login</a>
-                        <div class="dropdown-divider"></div>
-                        <a href="#" class="dropdown-item danger" id="btn-logout">Log Out</a>
-                    </div>
-                </div>
-            </div>
-        </header>
-
         <!-- Main Content -->
-        <main class="main-content" id="main-content" role="main">
-            <!-- Dynamic Content Loaded Here -->
-            
-            <!-- Home Page -->
-            <section class="page active" id="page-home" data-page="home">
-                <div class="hero-section">
-                    <div class="hero-bg" id="hero-bg"></div>
-                    <div class="hero-content">
-                        <span class="hero-badge">Featured</span>
-                        <h1 class="hero-title">Discover Music<br>With Perfect Lyrics</h1>
-                        <p class="hero-subtitle">Experience synchronized lyrics, AI-powered recommendations, and real-time P2P sharing.</p>
-                        <div class="hero-actions">
-                            <button class="btn-primary btn-large" id="btn-hero-play">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                                Start Listening
-                            </button>
-                            <button class="btn-secondary btn-large" id="btn-hero-upload">Upload Music</button>
-                        </div>
-                    </div>
-                    <div class="hero-visual">
-                        <div class="vinyl-record" id="hero-vinyl">
-                            <div class="vinyl-grooves"></div>
-                            <div class="vinyl-label"></div>
-                        </div>
+        <main class="main-content">
+            <!-- Top Bar -->
+            <header class="top-bar">
+                <div class="search-container">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search songs, artists, lyrics..." id="global-search">
+                    <div class="search-filters">
+                        <button class="filter-btn active" data-filter="all">All</button>
+                        <button class="filter-btn" data-filter="songs">Songs</button>
+                        <button class="filter-btn" data-filter="artists">Artists</button>
+                        <button class="filter-btn" data-filter="lyrics">Lyrics</button>
                     </div>
                 </div>
-
-                <div class="content-section">
-                    <div class="section-header">
-                        <h2 class="section-title">Trending Now</h2>
-                        <a href="#trending" class="section-link">See All</a>
-                    </div>
-                    <div class="song-grid" id="trending-grid">
-                        <!-- Populated by JS -->
-                    </div>
-                </div>
-
-                <div class="content-section">
-                    <div class="section-header">
-                        <h2 class="section-title">Recently Played</h2>
-                        <button class="btn-clear" id="clear-recent">Clear All</button>
-                    </div>
-                    <div class="song-list" id="recent-list">
-                        <!-- Populated by JS -->
-                    </div>
-                </div>
-
-                <div class="content-section">
-                    <div class="section-header">
-                        <h2 class="section-title">Your Playlists</h2>
-                        <button class="btn-icon" id="btn-create-playlist" title="Create Playlist">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        </button>
-                    </div>
-                    <div class="playlist-grid" id="playlist-grid">
-                        <!-- Populated by JS -->
-                    </div>
-                </div>
-            </section>
-
-            <!-- Player Page (Full Screen) -->
-            <section class="page page-fullscreen" id="page-player" data-page="player">
-                <div class="player-backdrop" id="player-backdrop"></div>
-                <button class="btn-close-fullscreen" id="close-fullscreen">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                </button>
                 
-                <div class="player-layout">
-                    <div class="player-left">
-                        <div class="album-art-container">
-                            <img src="" alt="Album Art" class="album-art" id="fs-album-art">
-                            <div class="album-art-glow"></div>
-                            <div class="playing-indicator" id="fs-playing-indicator">
-                                <span></span><span></span><span></span><span></span>
+                <div class="top-bar-actions">
+                    <button class="action-btn" id="voice-search-btn" title="Voice Search">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                    <button class="action-btn" id="notifications-btn" title="Notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge">3</span>
+                    </button>
+                    <button class="action-btn" id="theme-toggle" title="Toggle Theme">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button class="login-btn" id="login-btn">Login</button>
+                </div>
+            </header>
+
+            <!-- Content Pages -->
+            <div class="content-area" id="content-area">
+                <!-- Home Page -->
+                <section class="page active" id="page-home">
+                    <div class="hero-section">
+                        <div class="hero-content">
+                            <h1>Discover Your <span class="gradient-text">Rhythm</span></h1>
+                            <p>Experience music with synchronized lyrics, smart playlists, and immersive audio visualization.</p>
+                            <div class="hero-actions">
+                                <button class="btn btn-primary btn-lg" id="start-listening">
+                                    <i class="fas fa-play"></i>
+                                    Start Listening
+                                </button>
+                                <button class="btn btn-secondary btn-lg" id="explore-library">
+                                    Explore Library
+                                </button>
                             </div>
                         </div>
-                        <div class="song-info-center">
-                            <h2 class="song-title" id="fs-song-title">Select a Song</h2>
-                            <p class="song-artist" id="fs-song-artist">Artist Name</p>
-                            <div class="song-meta" id="fs-song-meta">
-                                <span class="meta-item">2024</span>
-                                <span class="meta-separator">•</span>
-                                <span class="meta-item">Album Name</span>
+                        <div class="hero-visual">
+                            <div class="album-art-carousel">
+                                <div class="album-card active">
+                                    <div class="album-art" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                        <i class="fas fa-music"></i>
+                                    </div>
+                                </div>
+                                <div class="album-card">
+                                    <div class="album-art" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                                        <i class="fas fa-guitar"></i>
+                                    </div>
+                                </div>
+                                <div class="album-card">
+                                    <div class="album-art" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                                        <i class="fas fa-drum"></i>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="player-right">
-                        <div class="lyrics-container" id="lyrics-container">
-                            <div class="lyrics-header">
-                                <h3>Lyrics</h3>
-                                <div class="lyrics-actions">
-                                    <button class="btn-lyric-action" id="btn-lyrics-sync" title="Sync Mode">
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <div class="section trending-section">
+                        <div class="section-header">
+                            <h2>Trending Now</h2>
+                            <button class="view-all">View All</button>
+                        </div>
+                        <div class="song-grid" id="trending-songs">
+                            <!-- Dynamic content -->
+                        </div>
+                    </div>
+
+                    <div class="section recently-played-section">
+                        <div class="section-header">
+                            <h2>Recently Played</h2>
+                            <button class="view-all">View All</button>
+                        </div>
+                        <div class="song-list" id="recently-played">
+                            <!-- Dynamic content -->
+                        </div>
+                    </div>
+
+                    <div class="section mood-section">
+                        <div class="section-header">
+                            <h2>Mood & Genres</h2>
+                        </div>
+                        <div class="mood-grid">
+                            <div class="mood-card" data-mood="happy">
+                                <div class="mood-icon">😊</div>
+                                <span>Happy</span>
+                            </div>
+                            <div class="mood-card" data-mood="sad">
+                                <div class="mood-icon">😢</div>
+                                <span>Sad</span>
+                            </div>
+                            <div class="mood-card" data-mood="energetic">
+                                <div class="mood-icon">⚡</div>
+                                <span>Energetic</span>
+                            </div>
+                            <div class="mood-card" data-mood="chill">
+                                <div class="mood-icon">🌙</div>
+                                <span>Chill</span>
+                            </div>
+                            <div class="mood-card" data-mood="focus">
+                                <div class="mood-icon">🎯</div>
+                                <span>Focus</span>
+                            </div>
+                            <div class="mood-card" data-mood="workout">
+                                <div class="mood-icon">💪</div>
+                                <span>Workout</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Player Page (Full Screen) -->
+                <section class="page player-page" id="page-player">
+                    <div class="player-background">
+                        <div class="blur-bg" id="player-blur-bg"></div>
+                        <div class="noise-overlay"></div>
+                    </div>
+                    
+                    <div class="player-container">
+                        <div class="player-main">
+                            <div class="now-playing">
+                                <div class="album-art-large" id="current-album-art">
+                                    <div class="album-art-placeholder">
+                                        <i class="fas fa-music"></i>
+                                    </div>
+                                    <div class="playing-indicator">
+                                        <span></span><span></span><span></span><span></span>
+                                    </div>
+                                </div>
+                                
+                                <div class="track-info-large">
+                                    <h2 id="current-title">Select a Song</h2>
+                                    <p id="current-artist">Artist Name</p>
+                                    <div class="track-meta">
+                                        <span id="current-album">Album Name</span>
+                                        <span class="separator">•</span>
+                                        <span id="current-year">2024</span>
+                                    </div>
+                                </div>
+
+                                <div class="player-actions">
+                                    <button class="action-btn" id="btn-like">
+                                        <i class="far fa-heart"></i>
                                     </button>
-                                    <button class="btn-lyric-action" id="btn-lyrics-translate" title="Translate">
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 8l6 6"/><path d="M4 14l6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="M22 22l-5-10-5 10"/><path d="M14 18h6"/></svg>
+                                    <button class="action-btn" id="btn-add-to-playlist">
+                                        <i class="fas fa-plus"></i>
                                     </button>
-                                    <button class="btn-lyric-action" id="btn-lyrics-font" title="Font Size">
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
+                                    <button class="action-btn" id="btn-share">
+                                        <i class="fas fa-share-alt"></i>
+                                    </button>
+                                    <button class="action-btn" id="btn-lyrics-toggle">
+                                        <i class="fas fa-align-center"></i>
                                     </button>
                                 </div>
                             </div>
-                            <div class="lyrics-content" id="lyrics-content">
-                                <div class="lyrics-placeholder">
-                                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-                                    <p>Lyrics will appear here</p>
-                                    <span>Upload an LRC file or generate with AI</span>
+
+                            <div class="lyrics-container" id="lyrics-container">
+                                <div class="lyrics-header">
+                                    <h3>Lyrics</h3>
+                                    <button class="btn-icon" id="lyrics-expand">
+                                        <i class="fas fa-expand"></i>
+                                    </button>
+                                </div>
+                                <div class="lyrics-content" id="lyrics-content">
+                                    <p class="lyrics-placeholder">Select a song to view lyrics</p>
+                                </div>
+                                <div class="lyrics-controls">
+                                    <button class="btn-text" id="sync-lyrics-btn">
+                                        <i class="fas fa-sync"></i>
+                                        Sync Lyrics
+                                    </button>
+                                    <button class="btn-text" id="edit-lyrics-btn" style="display: none;">
+                                        <i class="fas fa-edit"></i>
+                                        Edit
+                                    </button>
                                 </div>
                             </div>
-                            <div class="lyrics-sync-panel" id="lyrics-sync-panel" style="display:none;">
-                                <div class="sync-controls">
-                                    <button class="btn-sync" id="sync-set-time">Set Time [Space]</button>
-                                    <button class="btn-sync" id="sync-prev">← Prev</button>
-                                    <button class="btn-sync" id="sync-next">Next →</button>
-                                    <button class="btn-sync" id="sync-save">Save LRC</button>
+                        </div>
+
+                        <div class="player-controls-section">
+                            <div class="visualizer-container">
+                                <canvas id="audio-visualizer"></canvas>
+                            </div>
+                            
+                            <div class="progress-section">
+                                <span class="time-current" id="current-time">0:00</span>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar" id="progress-bar">
+                                        <div class="progress-fill" id="progress-fill"></div>
+                                        <div class="progress-handle" id="progress-handle"></div>
+                                    </div>
+                                    <div class="waveform-container" id="waveform"></div>
                                 </div>
-                                <div class="sync-progress">
-                                    <span id="sync-current">Line 1 of 0</span>
-                                    <div class="sync-bar"><div id="sync-progress-bar"></div></div>
+                                <span class="time-total" id="total-time">0:00</span>
+                            </div>
+
+                            <div class="main-controls">
+                                <button class="control-btn" id="btn-shuffle">
+                                    <i class="fas fa-random"></i>
+                                </button>
+                                <button class="control-btn" id="btn-prev">
+                                    <i class="fas fa-step-backward"></i>
+                                </button>
+                                <button class="control-btn btn-play" id="btn-play">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                                <button class="control-btn" id="btn-next">
+                                    <i class="fas fa-step-forward"></i>
+                                </button>
+                                <button class="control-btn" id="btn-repeat">
+                                    <i class="fas fa-redo"></i>
+                                </button>
+                            </div>
+
+                            <div class="secondary-controls">
+                                <div class="volume-control">
+                                    <button class="control-btn" id="btn-mute">
+                                        <i class="fas fa-volume-up"></i>
+                                    </button>
+                                    <div class="volume-slider-container">
+                                        <div class="volume-slider" id="volume-slider">
+                                            <div class="volume-fill" id="volume-fill"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="playback-options">
+                                    <button class="control-btn" id="btn-speed" title="Playback Speed">
+                                        <span>1x</span>
+                                    </button>
+                                    <button class="control-btn" id="btn-equalizer" title="Equalizer">
+                                        <i class="fas fa-sliders-h"></i>
+                                    </button>
+                                    <button class="control-btn" id="btn-queue" title="Queue">
+                                        <i class="fas fa-list-ul"></i>
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                </section>
 
-                <div class="player-controls-container">
-                    <div class="progress-section">
-                        <span class="time-current" id="fs-time-current">0:00</span>
-                        <div class="progress-bar-container" id="fs-progress-container">
-                            <div class="progress-bar">
-                                <div class="progress-fill" id="fs-progress-fill"></div>
-                                <div class="progress-handle" id="fs-progress-handle"></div>
+                <!-- Library Page -->
+                <section class="page" id="page-library">
+                    <div class="page-header">
+                        <h1>Your Library</h1>
+                        <div class="header-actions">
+                            <button class="btn btn-secondary" id="import-music">
+                                <i class="fas fa-file-import"></i>
+                                Import
+                            </button>
+                            <button class="btn btn-primary" id="create-playlist">
+                                <i class="fas fa-plus"></i>
+                                New Playlist
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="library-tabs">
+                        <button class="tab-btn active" data-tab="songs">Songs</button>
+                        <button class="tab-btn" data-tab="albums">Albums</button>
+                        <button class="tab-btn" data-tab="artists">Artists</button>
+                        <button class="tab-btn" data-tab="genres">Genres</button>
+                    </div>
+                    
+                    <div class="library-content" id="library-content">
+                        <div class="song-table-container">
+                            <table class="song-table">
+                                <thead>
+                                    <tr>
+                                        <th class="col-number">#</th>
+                                        <th class="col-title">Title</th>
+                                        <th class="col-artist">Artist</th>
+                                        <th class="col-album">Album</th>
+                                        <th class="col-date">Date Added</th>
+                                        <th class="col-duration"><i class="far fa-clock"></i></th>
+                                        <th class="col-actions"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="library-songs">
+                                    <!-- Dynamic content -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Upload Page (Dev Only) -->
+                <section class="page" id="page-upload">
+                    <div class="page-header">
+                        <h1>Upload Music</h1>
+                        <p class="page-description">Add new songs to the library with synchronized lyrics</p>
+                    </div>
+                    
+                    <div class="upload-container">
+                        <div class="upload-area" id="upload-dropzone">
+                            <div class="upload-icon">
+                                <i class="fas fa-cloud-upload-alt"></i>
                             </div>
-                            <div class="waveform-container" id="waveform-container"></div>
-                        </div>
-                        <span class="time-total" id="fs-time-total">0:00</span>
-                    </div>
-
-                    <div class="controls-section">
-                        <div class="controls-left">
-                            <button class="control-btn" id="fs-btn-shuffle" title="Shuffle">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
-                            </button>
-                            <button class="control-btn" id="fs-btn-prev" title="Previous">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+                            <h3>Drop your music here</h3>
+                            <p>or click to browse files</p>
+                            <input type="file" id="audio-file-input" accept="audio/*" multiple hidden>
+                            <button class="btn btn-primary" onclick="document.getElementById('audio-file-input').click()">
+                                Select Files
                             </button>
                         </div>
-
-                        <div class="controls-center">
-                            <button class="control-btn btn-play-large" id="fs-btn-play">
-                                <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" id="fs-icon-play"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                                <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" id="fs-icon-pause" style="display:none;"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-                            </button>
-                        </div>
-
-                        <div class="controls-right">
-                            <button class="control-btn" id="fs-btn-next" title="Next">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
-                            </button>
-                            <button class="control-btn" id="fs-btn-repeat" title="Repeat">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="extra-controls">
-                        <button class="control-btn" id="fs-btn-lyrics" title="Toggle Lyrics">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-                        </button>
-                        <button class="control-btn" id="fs-btn-queue" title="Queue">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-                        </button>
-                        <button class="control-btn" id="fs-btn-devices" title="Connect Device">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
-                        </button>
-                        <div class="volume-control">
-                            <button class="control-btn" id="fs-btn-mute">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="fs-icon-volume"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-                            </button>
-                            <div class="volume-slider-container">
-                                <input type="range" min="0" max="100" value="80" class="volume-slider" id="fs-volume-slider">
+                        
+                        <div class="upload-form">
+                            <div class="form-group">
+                                <label>Song Title</label>
+                                <input type="text" id="upload-title" placeholder="Enter song title">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Artist</label>
+                                    <input type="text" id="upload-artist" placeholder="Artist name">
+                                </div>
+                                <div class="form-group">
+                                    <label>Album</label>
+                                    <input type="text" id="upload-album" placeholder="Album name">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Lyrics with Timestamps</label>
+                                <div class="lyrics-input-tabs">
+                                    <button class="tab-btn active" data-tab="simple">Simple</button>
+                                    <button class="tab-btn" data-tab="advanced">Advanced Editor</button>
+                                </div>
+                                <textarea id="upload-lyrics" placeholder="[00:00.00] First line of lyrics&#10;[00:05.00] Second line of lyrics&#10;[00:10.00] Third line..."></textarea>
+                                <div class="input-help">
+                                    <i class="fas fa-info-circle"></i>
+                                    Format: [mm:ss.xx] Lyrics text
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Album Art</label>
+                                <div class="image-upload" id="artwork-upload">
+                                    <div class="image-preview">
+                                        <i class="fas fa-image"></i>
+                                    </div>
+                                    <input type="file" id="artwork-input" accept="image/*" hidden>
+                                    <button class="btn btn-secondary" onclick="document.getElementById('artwork-input').click()">
+                                        Choose Image
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button class="btn btn-secondary" id="upload-cancel">Cancel</button>
+                                <button class="btn btn-primary" id="upload-submit">
+                                    <i class="fas fa-upload"></i>
+                                    Upload Song
+                                </button>
                             </div>
                         </div>
                     </div>
-                </div>
-            </section>
+                </section>
 
-            <!-- Other Pages Placeholders -->
-            <section class="page" id="page-browse" data-page="browse">
-                <div class="page-header">
-                    <h1>Browse</h1>
-                </div>
-                <div class="browse-categories" id="browse-categories"></div>
-                <div class="browse-results" id="browse-results"></div>
-            </section>
-
-            <section class="page" id="page-ai-generator" data-page="ai-generator">
-                <div class="page-header">
-                    <h1>AI Lyrics Generator</h1>
-                    <p>Generate synchronized lyrics using AI</p>
-                </div>
-                <div class="ai-generator-container">
-                    <div class="upload-zone" id="ai-upload-zone">
-                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                        <h3>Drop audio file here</h3>
-                        <p>or click to browse</p>
-                        <input type="file" accept="audio/*" id="ai-file-input" hidden>
-                    </div>
-                    <div class="ai-options" id="ai-options">
-                        <div class="option-group">
-                            <label>Language</label>
-                            <select id="ai-language">
-                                <option value="auto">Auto Detect</option>
-                                <option value="id">Indonesian</option>
-                                <option value="en">English</option>
-                                <option value="es">Spanish</option>
-                                <option value="ja">Japanese</option>
-                                <option value="ko">Korean</option>
-                            </select>
-                        </div>
-                        <div class="option-group">
-                            <label>Sync Precision</label>
-                            <select id="ai-precision">
-                                <option value="line">Line by Line</option>
-                                <option value="word">Word by Word (Beta)</option>
-                            </select>
-                        </div>
-                        <button class="btn-primary" id="btn-generate-lyrics" disabled>Generate Lyrics</button>
-                    </div>
-                    <div class="ai-progress" id="ai-progress" style="display:none;">
-                        <div class="progress-ring"></div>
-                        <span>Analyzing audio...</span>
-                    </div>
-                </div>
-            </section>
-
-            <section class="page" id="page-p2p-sync" data-page="p2p-sync">
-                <div class="page-header">
-                    <h1>P2P Sync</h1>
-                    <p>Listen together with friends in real-time</p>
-                </div>
-                <div class="p2p-container">
-                    <div class="p2p-status-card" id="p2p-status">
-                        <div class="status-icon offline">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                        </div>
-                        <h3>Disconnected</h3>
-                        <p>Create or join a room to start syncing</p>
-                    </div>
-                    <div class="p2p-actions">
-                        <button class="btn-primary btn-large" id="btn-create-room">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                            Create Room
-                        </button>
-                        <div class="join-room">
-                            <input type="text" placeholder="Enter Room ID" id="room-id-input" maxlength="6">
-                            <button class="btn-secondary" id="btn-join-room">Join</button>
-                        </div>
-                    </div>
-                    <div class="p2p-room-info" id="p2p-room-info" style="display:none;">
-                        <div class="room-code">
-                            <span>Room Code:</span>
-                            <code id="current-room-code">----</code>
-                            <button class="btn-icon" id="btn-copy-code" title="Copy">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <!-- Login Modal -->
+                <div class="modal" id="login-modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2>Welcome Back</h2>
+                            <button class="modal-close" id="close-login">
+                                <i class="fas fa-times"></i>
                             </button>
                         </div>
-                        <div class="peers-list" id="peers-list"></div>
-                    </div>
-                </div>
-            </section>
-
-            <section class="page" id="page-dev-panel" data-page="dev-panel" style="display:none;">
-                <div class="page-header">
-                    <h1>Developer Panel</h1>
-                    <span class="badge dev">DEV ONLY</span>
-                </div>
-                <div class="dev-grid">
-                    <div class="dev-card">
-                        <h3>Song Management</h3>
-                        <div class="dev-form">
-                            <input type="text" placeholder="Song Title" id="dev-song-title">
-                            <input type="text" placeholder="Artist" id="dev-song-artist">
-                            <input type="text" placeholder="Album" id="dev-song-album">
-                            <input type="file" accept="audio/*" id="dev-audio-file">
-                            <input type="file" accept=".lrc,.txt" id="dev-lrc-file">
-                            <button class="btn-primary" id="dev-add-song">Add Song</button>
+                        <div class="modal-body">
+                            <div class="login-tabs">
+                                <button class="tab-btn active" data-tab="user">User</button>
+                                <button class="tab-btn" data-tab="developer">Developer</button>
+                            </div>
+                            <form id="login-form">
+                                <div class="form-group">
+                                    <label>Username</label>
+                                    <input type="text" id="login-username" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Password</label>
+                                    <input type="password" id="login-password" required>
+                                </div>
+                                <div class="form-options">
+                                    <label class="checkbox">
+                                        <input type="checkbox" id="remember-me">
+                                        <span>Remember me</span>
+                                    </label>
+                                    <a href="#" class="forgot-password">Forgot password?</a>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-block">Login</button>
+                            </form>
+                            <div class="divider">
+                                <span>or</span>
+                            </div>
+                            <button class="btn btn-secondary btn-block" id="guest-login">
+                                Continue as Guest
+                            </button>
                         </div>
                     </div>
-                    <div class="dev-card">
-                        <h3>User Management</h3>
-                        <div class="dev-users" id="dev-users-list"></div>
-                    </div>
-                    <div class="dev-card">
-                        <h3>System Stats</h3>
-                        <div class="stats-grid" id="dev-stats"></div>
-                    </div>
-                    <div class="dev-card">
-                        <h3>Database</h3>
-                        <button class="btn-secondary" id="dev-export-db">Export Database</button>
-                        <button class="btn-secondary" id="dev-import-db">Import Database</button>
-                        <button class="btn-danger" id="dev-clear-db">Clear All Data</button>
-                    </div>
                 </div>
-            </section>
+            </div>
         </main>
 
-        <!-- Bottom Player Bar -->
-        <div class="player-bar" id="player-bar">
-            <div class="player-info">
-                <img src="assets/images/default-cover.png" alt="Cover" class="player-cover" id="mini-cover">
-                <div class="player-details">
-                    <span class="player-title" id="mini-title">No song playing</span>
-                    <span class="player-artist" id="mini-artist">Select a song</span>
-                </div>
-                <button class="btn-like" id="mini-like">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-                </button>
+        <!-- Mini Player (Fixed Bottom) -->
+        <div class="mini-player" id="mini-player">
+            <div class="mini-player-progress">
+                <div class="mini-progress-bar" id="mini-progress"></div>
             </div>
-
-            <div class="player-controls">
-                <div class="control-buttons">
-                    <button class="control-btn small" id="mini-shuffle">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+            <div class="mini-player-content">
+                <div class="mini-track-info">
+                    <div class="mini-album-art" id="mini-art">
+                        <i class="fas fa-music"></i>
+                    </div>
+                    <div class="mini-text">
+                        <span class="mini-title" id="mini-title">No song playing</span>
+                        <span class="mini-artist" id="mini-artist">-</span>
+                    </div>
+                </div>
+                <div class="mini-controls">
+                    <button class="mini-btn" id="mini-prev">
+                        <i class="fas fa-step-backward"></i>
                     </button>
-                    <button class="control-btn" id="mini-prev">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+                    <button class="mini-btn btn-play" id="mini-play">
+                        <i class="fas fa-play"></i>
                     </button>
-                    <button class="control-btn play-btn" id="mini-play">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" id="mini-icon-play"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" id="mini-icon-pause" style="display:none;"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-                    </button>
-                    <button class="control-btn" id="mini-next">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
-                    </button>
-                    <button class="control-btn small" id="mini-repeat">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                    <button class="mini-btn" id="mini-next">
+                        <i class="fas fa-step-forward"></i>
                     </button>
                 </div>
-                <div class="progress-wrapper">
-                    <span class="time" id="mini-time">0:00</span>
-                    <div class="progress-bar mini" id="mini-progress-container">
-                        <div class="progress-fill" id="mini-progress-fill"></div>
-                    </div>
-                    <span class="time" id="mini-duration">0:00</span>
-                </div>
-            </div>
-
-            <div class="player-extras">
-                <button class="control-btn" id="mini-lyrics" title="Lyrics">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-                </button>
-                <button class="control-btn" id="mini-queue" title="Queue">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-                </button>
-                <div class="volume-wrapper">
-                    <button class="control-btn" id="mini-mute">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                <div class="mini-actions">
+                    <button class="mini-btn" id="mini-lyrics">
+                        <i class="fas fa-align-center"></i>
                     </button>
-                    <input type="range" min="0" max="100" value="80" class="volume-slider mini" id="mini-volume">
+                    <button class="mini-btn" id="mini-expand">
+                        <i class="fas fa-expand-alt"></i>
+                    </button>
                 </div>
-                <button class="control-btn fullscreen-btn" id="mini-fullscreen" title="Fullscreen">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-                </button>
             </div>
         </div>
-
-        <!-- Modals -->
-        <div class="modal-overlay" id="modal-overlay"></div>
-        
-        <!-- Login Modal -->
-        <div class="modal" id="modal-login">
-            <div class="modal-header">
-                <h2>Welcome Back</h2>
-                <button class="modal-close">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="login-form">
-                    <div class="form-group">
-                        <label>Email or Username</label>
-                        <input type="text" required placeholder="Enter your email">
-                    </div>
-                    <div class="form-group">
-                        <label>Password</label>
-                        <input type="password" required placeholder="Enter password">
-                    </div>
-                    <button type="submit" class="btn-primary btn-block">Sign In</button>
-                </form>
-                <div class="divider"><span>or</span></div>
-                <button class="btn-social btn-google">
-                    <img src="assets/icons/google.svg" alt="Google"> Continue with Google
-                </button>
-            </div>
-        </div>
-
-        <!-- Create Playlist Modal -->
-        <div class="modal" id="modal-playlist">
-            <div class="modal-header">
-                <h2>Create Playlist</h2>
-                <button class="modal-close">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="playlist-form">
-                    <div class="form-group">
-                        <label>Playlist Name</label>
-                        <input type="text" required placeholder="My Awesome Playlist">
-                    </div>
-                    <div class="form-group">
-                        <label>Description (Optional)</label>
-                        <textarea placeholder="Describe your playlist..."></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>Cover Image</label>
-                        <div class="image-upload" id="playlist-cover-upload">
-                            <span>Drop image or click to upload</span>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn-primary btn-block">Create Playlist</button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Toast Notifications -->
-        <div class="toast-container" id="toast-container"></div>
-
-        <!-- Context Menu -->
-        <div class="context-menu" id="context-menu">
-            <ul class="context-list">
-                <li class="context-item" data-action="play">Play</li>
-                <li class="context-item" data-action="add-queue">Add to Queue</li>
-                <li class="context-item" data-action="add-playlist">Add to Playlist</li>
-                <li class="context-divider"></li>
-                <li class="context-item" data-action="edit-lyrics">Edit Lyrics</li>
-                <li class="context-item" data-action="share">Share</li>
-                <li class="context-divider"></li>
-                <li class="context-item danger" data-action="delete">Delete</li>
-            </ul>
-        </div>
-
-        <!-- Audio Element -->
-        <audio id="audio-player" preload="metadata" crossorigin="anonymous"></audio>
-        
-        <!-- Hidden File Inputs -->
-        <input type="file" id="file-upload" accept="audio/*,.lrc" multiple hidden>
     </div>
 
-    <!-- Service Worker Registration -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('SW registered:', reg))
-                .catch(err => console.log('SW registration failed:', err));
-        }
-    </script>
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
 
-    <!-- Core Scripts -->
+    <!-- Context Menu -->
+    <div class="context-menu" id="context-menu"></div>
+
+    <!-- Scripts -->
     <script src="js/utils.js"></script>
     <script src="js/api.js"></script>
     <script src="js/core.js"></script>
@@ -857,25 +623,15 @@
     <script src="js/library.js"></script>
     <script src="js/themes.js"></script>
     <script src="js/ui.js"></script>
-    
-    <!-- Feature Scripts -->
-    <script src="js/visualizer.js"></script>
-    <script src="js/ai/lyrics-generator.js"></script>
-    <script src="js/ai/mood-analyzer.js"></script>
-    <script src="js/ai/recommender.js"></script>
-    <script src="js/p2p/sync-manager.js"></script>
-    <script src="js/p2p/webrtc-broadcast.js"></script>
-    <script src="js/offline/cache-manager.js"></script>
-    <script src="js/voice/voice-controller.js"></script>
-    <script src="js/analytics/stats-tracker.js"></script>
-    <script src="js/effects/equalizer.js"></script>
     <script src="js/dev.js"></script>
     
-    <!-- Workers -->
+    <!-- Service Worker -->
     <script>
-        // Web Workers initialization
-        window.audioWorker = new Worker('workers/audio-processor.worker.js');
-        window.lyricsWorker = new Worker('workers/lyrics-parser.worker.js');
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('Service Worker registered'))
+                .catch(err => console.log('Service Worker registration failed'));
+        }
     </script>
 </body>
 </html>
