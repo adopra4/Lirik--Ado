@@ -1314,4 +1314,406 @@ body {
     .dev-panel {
         width: calc(100% - var(--space-xl) * 2);
     }
+/* Additional v1.2 Styles */
+
+/* List View */
+.song-list-view {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.song-list-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    border: 1px solid transparent;
+}
+
+.song-list-item:hover {
+    background: var(--bg-hover);
+    border-color: var(--border-color);
+}
+
+.song-list-item.active {
+    border-color: var(--accent-primary);
+    background: var(--accent-alpha);
+}
+
+.list-cover {
+    width: 50px;
+    height: 50px;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+}
+
+.list-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.list-title {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.list-artist {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.list-duration {
+    color: var(--text-muted);
+    font-family: monospace;
+    font-size: 0.9rem;
+}
+
+.list-fav {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: all var(--transition-fast);
+}
+
+.list-fav:hover, .list-fav.active {
+    opacity: 1;
+}
+
+/* Playlist View */
+.playlist-header {
+    display: flex;
+    gap: var(--space-xl);
+    margin-bottom: var(--space-xl);
+    padding: var(--space-xl);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+}
+
+.playlist-cover {
+    width: 200px;
+    height: 200px;
+    background: var(--gradient-1);
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 5rem;
+    flex-shrink: 0;
+}
+
+.playlist-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.playlist-info h2 {
+    font-size: 2.5rem;
+    margin-bottom: var(--space-sm);
+}
+
+.playlist-stats {
+    display: flex;
+    gap: var(--space-lg);
+    color: var(--text-secondary);
+    margin: var(--space-md) 0;
+}
+
+.playlist-actions {
+    display: flex;
+    gap: var(--space-md);
+    margin-top: var(--space-md);
+}
+
+.playlist-actions button {
+    padding: var(--space-md) var(--space-xl);
+    border: none;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    font-weight: 600;
+    transition: all var(--transition-base);
+}
+
+.btn-play-all {
+    background: var(--accent-primary);
+    color: white;
+}
+
+.btn-play-all:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px var(--accent-alpha);
+}
+
+.btn-shuffle {
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.playlist-songs-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.playlist-song-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-base);
+}
+
+.playlist-song-item:hover {
+    background: var(--bg-hover);
+}
+
+.song-number {
+    width: 30px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.song-thumb {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+}
+
+.song-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.song-name {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.song-meta {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.song-actions {
+    display: flex;
+    gap: var(--space-sm);
+}
+
+.song-actions button {
+    width: 35px;
+    height: 35px;
+    border-radius: var(--radius-full);
+    border: none;
+    background: var(--bg-elevated);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.song-actions button:hover {
+    background: var(--accent-primary);
+    color: white;
+}
+
+.empty-playlist {
+    text-align: center;
+    padding: var(--space-2xl);
+    color: var(--text-muted);
+}
+
+/* Up Next */
+.up-next {
+    background: rgba(255,255,255,0.05);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+}
+
+.up-next h4 {
+    margin-bottom: var(--space-md);
+    color: var(--text-secondary);
+}
+
+.up-next-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.up-next-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    cursor: pointer;
+    padding: var(--space-sm);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+}
+
+.up-next-item:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.up-next-item img {
+    width: 50px;
+    height: 50px;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+}
+
+.up-next-title {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.up-next-artist {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+/* Empty State */
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: var(--space-2xl);
+    color: var(--text-muted);
+}
+
+/* Delete button in edit mode */
+.btn-delete-song {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    border-radius: var(--radius-full);
+    background: var(--danger);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    z-index: 10;
+}
+
+.edit-mode .btn-delete-song {
+    display: flex;
+}
+
+/* Lyrics hint */
+.lyrics-hint {
+    margin-top: var(--space-lg);
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.lyrics-hint code {
+    display: block;
+    margin-top: var(--space-sm);
+    padding: var(--space-md);
+    background: var(--bg-elevated);
+    border-radius: var(--radius-md);
+    font-family: monospace;
+    font-size: 0.85rem;
+}
+
+/* Plugin item */
+.plugin-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-md);
+    background: var(--bg-elevated);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-sm);
+}
+
+.plugin-item button {
+    padding: var(--space-xs) var(--space-md);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: var(--danger);
+    color: white;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+/* Bulk import */
+.bulk-import textarea {
+    width: 100%;
+    min-height: 200px;
+    margin: var(--space-md) 0;
+    padding: var(--space-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    font-family: monospace;
+    font-size: 0.85rem;
+}
+
+/* System info */
+.system-info {
+    background: var(--bg-elevated);
+    padding: var(--space-lg);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-lg);
+}
+
+.system-info p {
+    margin-bottom: var(--space-sm);
+    display: flex;
+    justify-content: space-between;
+}
+
+.system-actions {
+    display: flex;
+    gap: var(--space-md);
+}
+
+.system-actions button {
+    flex: 1;
+    padding: var(--space-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.system-actions button:hover {
+    border-color: var(--accent-primary);
+}
+
+/* No playlists */
+.no-playlists {
+    padding: var(--space-md);
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    text-align: center;
+  }
+
 }
