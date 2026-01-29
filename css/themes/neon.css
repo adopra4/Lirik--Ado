@@ -1,0 +1,36 @@
+/* ============================================
+   NEON THEME
+   ============================================ */
+
+[data-theme="neon"] {
+    --bg-primary: #050505;
+    --bg-secondary: #0a0a0a;
+    --bg-elevated: #111111;
+    --bg-hover: #1a1a1a;
+    
+    --text-primary: #ffffff;
+    --text-secondary: #00ffff;
+    --text-muted: #008b8b;
+    
+    --accent-primary: #ff00ff;
+    --accent-secondary: #00ffff;
+    --accent-alpha: rgba(255, 0, 255, 0.4);
+    
+    --border-color: rgba(0, 255, 255, 0.2);
+    
+    --shadow-sm: 0 0 10px rgba(0, 255, 255, 0.3);
+    --shadow-md: 0 0 20px rgba(255, 0, 255, 0.3);
+    --shadow-lg: 0 0 40px rgba(0, 255, 255, 0.4);
+}
+
+[data-theme="neon"] .logo {
+    text-shadow: 0 0 20px var(--accent-primary);
+}
+
+[data-theme="neon"] .song-card:hover {
+    box-shadow: 0 0 30px var(--accent-alpha);
+}
+
+[data-theme="neon"] .lyric-line.active {
+    text-shadow: 0 0 20px var(--accent-primary), 0 0 40px var(--accent-secondary);
+}
